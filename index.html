@@ -1,0 +1,2235 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>股票族群查詢系統</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e17;
+    --bg2: #111827;
+    --bg3: #1a2332;
+    --border: #1e3a5f;
+    --accent: #00d4ff;
+    --accent2: #0099cc;
+    --accent3: #ff6b35;
+    --green: #00e5a0;
+    --red: #ff4d6d;
+    --yellow: #ffd166;
+    --text: #e2e8f0;
+    --text2: #94a3b8;
+    --text3: #64748b;
+    --card-bg: #0d1526;
+    --glow: 0 0 20px rgba(0,212,255,0.15);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans TC', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+  }
+
+  /* Header */
+  header {
+    padding: 28px 0 20px;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, rgba(0,212,255,0.05) 0%, transparent 100%);
+  }
+
+  .header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-icon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    box-shadow: 0 0 20px rgba(0,212,255,0.4);
+  }
+
+  .logo-text h1 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: 1px;
+  }
+
+  .logo-text p {
+    font-size: 11px;
+    color: var(--text3);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 10px;
+  }
+
+  .btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    font-weight: 500;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #000;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 20px rgba(0,212,255,0.4);
+  }
+
+  .btn-outline {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text2);
+  }
+
+  .btn-outline:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .btn-ai {
+    background: linear-gradient(135deg, #7c3aed, #a855f7);
+    color: white;
+  }
+
+  .btn-ai:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 20px rgba(168,85,247,0.4);
+  }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .tab {
+    padding: 8px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    color: var(--text3);
+    transition: all 0.2s;
+    border: 1px solid transparent;
+  }
+
+  .tab:hover { color: var(--text2); }
+
+  .tab.active {
+    background: var(--bg3);
+    border-color: var(--border);
+    color: var(--accent);
+  }
+
+  /* Search Section */
+  .search-section {
+    padding: 24px 0 16px;
+  }
+
+  .search-box-wrapper {
+    position: relative;
+    margin-bottom: 16px;
+  }
+
+  .search-icon {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text3);
+    font-size: 16px;
+  }
+
+  #searchInput {
+    width: 100%;
+    padding: 14px 16px 14px 46px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text);
+    font-size: 16px;
+    font-family: inherit;
+    transition: all 0.2s;
+    outline: none;
+  }
+
+  #searchInput:focus {
+    border-color: var(--accent);
+    box-shadow: var(--glow);
+  }
+
+  #searchInput::placeholder { color: var(--text3); }
+
+  .search-hint {
+    font-size: 12px;
+    color: var(--text3);
+    margin-bottom: 12px;
+  }
+
+  .search-hint span {
+    display: inline-block;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 8px;
+    margin: 2px;
+    color: var(--text2);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .search-hint span:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* Stats bar */
+  .stats-bar {
+    display: flex;
+    gap: 16px;
+    padding: 10px 0;
+    font-size: 12px;
+    color: var(--text3);
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+
+  .stats-bar span { display: flex; align-items: center; gap: 6px; }
+  .stats-bar .count { color: var(--accent); font-family: 'JetBrains Mono', monospace; font-weight: 600; }
+
+  /* Results Grid */
+  .results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 12px;
+    padding-bottom: 40px;
+  }
+
+  .stock-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stock-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), transparent);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .stock-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(0,212,255,0.1);
+  }
+
+  .stock-card:hover::before { opacity: 1; }
+
+  .card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    gap: 8px;
+  }
+
+  .stock-info { flex: 1; min-width: 0; }
+
+  .stock-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .stock-code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    font-weight: 600;
+    background: rgba(0,212,255,0.08);
+    padding: 2px 8px;
+    border-radius: 4px;
+    border: 1px solid rgba(0,212,255,0.2);
+    display: inline-block;
+  }
+
+  .card-groups {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin: 10px 0;
+  }
+
+  .group-tag {
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: rgba(255,107,53,0.1);
+    border: 1px solid rgba(255,107,53,0.25);
+    color: var(--accent3);
+  }
+
+  .card-desc {
+    font-size: 12px;
+    color: var(--text2);
+    line-height: 1.6;
+    margin-bottom: 10px;
+  }
+
+  .card-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .tag {
+    font-size: 11px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    background: rgba(0,229,160,0.08);
+    border: 1px solid rgba(0,229,160,0.15);
+    color: #4dd4a0;
+  }
+
+  .tag.highlight {
+    background: rgba(0,212,255,0.15);
+    border-color: rgba(0,212,255,0.4);
+    color: var(--accent);
+  }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text3);
+    grid-column: 1 / -1;
+  }
+
+  .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
+  .empty-state h3 { font-size: 18px; color: var(--text2); margin-bottom: 8px; }
+
+  /* Modal / Detail Panel */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(4px);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+
+  .modal-overlay.show {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .modal {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+    transform: translateY(20px);
+    transition: transform 0.2s;
+  }
+
+  .modal-overlay.show .modal { transform: translateY(0); }
+
+  .modal-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    background: var(--bg2);
+    z-index: 1;
+  }
+
+  .modal-title { font-size: 18px; font-weight: 700; }
+
+  .modal-close {
+    background: none;
+    border: none;
+    color: var(--text3);
+    font-size: 20px;
+    cursor: pointer;
+    padding: 4px;
+    line-height: 1;
+    transition: color 0.2s;
+  }
+
+  .modal-close:hover { color: var(--text); }
+
+  .modal-body { padding: 24px; }
+
+  .modal-code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 24px;
+    color: var(--accent);
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  .modal-name { font-size: 28px; font-weight: 700; margin-bottom: 20px; }
+
+  .modal-section { margin-bottom: 20px; }
+
+  .modal-section h4 {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--text3);
+    margin-bottom: 10px;
+  }
+
+  .modal-desc {
+    font-size: 14px;
+    line-height: 1.8;
+    color: var(--text2);
+    background: var(--bg3);
+    padding: 14px 16px;
+    border-radius: 8px;
+    border-left: 3px solid var(--accent);
+  }
+
+  .modal-groups {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .modal-group-tag {
+    padding: 6px 14px;
+    border-radius: 6px;
+    background: rgba(255,107,53,0.1);
+    border: 1px solid rgba(255,107,53,0.3);
+    color: var(--accent3);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .modal-group-tag:hover {
+    background: rgba(255,107,53,0.2);
+    transform: translateY(-1px);
+  }
+
+  .modal-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .modal-tag {
+    padding: 4px 12px;
+    border-radius: 6px;
+    background: rgba(0,229,160,0.08);
+    border: 1px solid rgba(0,229,160,0.2);
+    color: #4dd4a0;
+    font-size: 12px;
+  }
+
+  .edit-btn {
+    padding: 10px 20px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text2);
+    font-family: inherit;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .edit-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* AI Panel */
+  .ai-panel {
+    position: fixed;
+    right: -500px;
+    top: 0;
+    bottom: 0;
+    width: 480px;
+    background: var(--bg2);
+    border-left: 1px solid var(--border);
+    z-index: 200;
+    transition: right 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .ai-panel.open { right: 0; }
+
+  .ai-panel-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(135deg, rgba(124,58,237,0.1), rgba(168,85,247,0.05));
+  }
+
+  .ai-panel-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  .ai-badge {
+    background: linear-gradient(135deg, #7c3aed, #a855f7);
+    color: white;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .ai-panel-body { flex: 1; overflow-y: auto; padding: 20px 24px; }
+
+  .ai-messages { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
+
+  .ai-msg {
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .ai-msg.system {
+    background: rgba(124,58,237,0.1);
+    border: 1px solid rgba(168,85,247,0.2);
+    color: var(--text2);
+  }
+
+  .ai-msg.user {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text);
+    align-self: flex-end;
+    max-width: 90%;
+  }
+
+  .ai-msg.assistant {
+    background: rgba(0,212,255,0.05);
+    border: 1px solid rgba(0,212,255,0.15);
+    color: var(--text);
+  }
+
+  .ai-msg.assistant strong { color: var(--accent); }
+
+  .ai-input-area {
+    border-top: 1px solid var(--border);
+    padding: 16px 24px;
+    background: var(--bg2);
+  }
+
+  #aiInput {
+    width: 100%;
+    padding: 12px 14px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-size: 13px;
+    font-family: inherit;
+    resize: none;
+    min-height: 80px;
+    outline: none;
+    transition: border-color 0.2s;
+    margin-bottom: 10px;
+  }
+
+  #aiInput:focus { border-color: #a855f7; }
+
+  #aiInput::placeholder { color: var(--text3); }
+
+  .ai-input-hint {
+    font-size: 11px;
+    color: var(--text3);
+    margin-bottom: 10px;
+    line-height: 1.6;
+  }
+
+  .ai-input-actions { display: flex; gap: 8px; }
+
+  /* Suggestion cards */
+  .suggestion-cards { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+
+  .suggestion-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+  }
+
+  .suggestion-card h5 {
+    font-size: 12px;
+    color: var(--accent);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .suggestion-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+
+  .suggestion-item:last-child { border-bottom: none; }
+
+  .suggestion-code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    min-width: 48px;
+    background: rgba(0,212,255,0.08);
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-align: center;
+  }
+
+  .suggestion-content { flex: 1; font-size: 12px; }
+  .suggestion-name { color: var(--text); font-weight: 500; margin-bottom: 2px; }
+  .suggestion-reason { color: var(--text2); line-height: 1.5; }
+
+  .suggestion-apply {
+    background: rgba(0,229,160,0.1);
+    border: 1px solid rgba(0,229,160,0.3);
+    color: var(--green);
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .suggestion-apply:hover {
+    background: rgba(0,229,160,0.2);
+    transform: translateY(-1px);
+  }
+
+  /* Loading */
+  .loading-dots {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    padding: 8px 0;
+  }
+
+  .loading-dots span {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: bounce 1.2s infinite;
+  }
+
+  .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes bounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+    30% { transform: translateY(-6px); opacity: 1; }
+  }
+
+  /* Edit Mode */
+  .edit-form { display: flex; flex-direction: column; gap: 14px; }
+
+  .form-group label {
+    display: block;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text3);
+    margin-bottom: 6px;
+  }
+
+  .form-group input,
+  .form-group textarea {
+    width: 100%;
+    padding: 10px 14px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .form-group input:focus,
+  .form-group textarea:focus { border-color: var(--accent); }
+
+  .form-group textarea { resize: vertical; min-height: 80px; }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--bg2);
+    border: 1px solid var(--green);
+    border-radius: 10px;
+    padding: 12px 20px;
+    color: var(--green);
+    font-size: 13px;
+    z-index: 999;
+    transform: translateY(60px);
+    opacity: 0;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.error { border-color: var(--red); color: var(--red); }
+
+  /* Sync badge */
+  .sync-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--text3);
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+  }
+
+  .sync-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+  }
+
+  .sync-dot.offline { background: var(--red); }
+  .sync-dot.syncing {
+    background: var(--yellow);
+    animation: pulse 1s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* Group filter tags */
+  .group-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
+  }
+
+  .group-filter-tag {
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    color: var(--text3);
+    transition: all 0.15s;
+    background: transparent;
+  }
+
+  .group-filter-tag:hover {
+    border-color: var(--accent3);
+    color: var(--accent3);
+  }
+
+  .group-filter-tag.active {
+    background: rgba(255,107,53,0.12);
+    border-color: var(--accent3);
+    color: var(--accent3);
+  }
+
+  /* Config page */
+  .config-section {
+    padding: 24px 0;
+  }
+
+  .config-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 16px;
+  }
+
+  .config-card h3 {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .config-card p {
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.6;
+    margin-bottom: 16px;
+  }
+
+  .config-input {
+    width: 100%;
+    padding: 12px 14px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 13px;
+    font-family: 'JetBrains Mono', monospace;
+    outline: none;
+    transition: border-color 0.2s;
+    margin-bottom: 12px;
+  }
+
+  .config-input:focus { border-color: var(--accent); }
+
+  .config-step {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+
+  .config-step:last-child { border-bottom: none; }
+
+  .step-num {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #000;
+    font-size: 11px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .step-content { font-size: 13px; color: var(--text2); line-height: 1.6; }
+  .step-content strong { color: var(--text); }
+  .step-content code {
+    background: var(--bg3);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+  }
+
+  /* Responsive */
+  @media (max-width: 600px) {
+    .results-grid { grid-template-columns: 1fr; }
+    .ai-panel { width: 100%; right: -100%; }
+    .header-inner { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <div class="header-inner">
+      <div class="logo">
+        <div class="logo-icon">📊</div>
+        <div class="logo-text">
+          <h1>股票族群查詢系統</h1>
+          <p>Taiwan Stock Group Intelligence</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <div class="sync-status" id="syncStatus">
+          <div class="sync-dot offline" id="syncDot"></div>
+          <span id="syncText">本地模式</span>
+        </div>
+        <button class="btn btn-outline" onclick="showTab('config')" style="display:none">⚙ 設定</button>
+        <button class="btn btn-ai" onclick="toggleAIPanel()" style="display:none">✦ AI 更新助手</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+  <div class="tabs">
+    <div class="tab active" onclick="showTab('search')" id="tab-search">🔍 搜尋查詢</div>
+    <div class="tab" onclick="showTab('groups')" id="tab-groups">📂 族群瀏覽</div>
+    <div class="tab" onclick="showTab('edit')" id="tab-edit" style="display:none">✏️ 資料管理</div>
+    <div class="tab" onclick="showTab('audit')" id="tab-audit" style="display:none">🔎 資料補齊</div>
+    <div class="tab" onclick="showTab('config')" id="tab-config" style="display:none">⚙ Google Sheets 設定</div>
+  </div>
+
+  <!-- SEARCH TAB -->
+  <div id="page-search">
+    <div class="search-section">
+      <div class="search-box-wrapper">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="searchInput" placeholder="輸入股票代號、名稱或關鍵字（例：2002、中鋼、AI伺服器、矽光子）" autocomplete="off">
+      </div>
+      <div class="search-hint">
+        熱門搜尋：
+        <span onclick="quickSearch('AI伺服器')">AI伺服器</span>
+        <span onclick="quickSearch('矽光子')">矽光子</span>
+        <span onclick="quickSearch('HBM')">HBM</span>
+        <span onclick="quickSearch('散熱液冷')">散熱</span>
+        <span onclick="quickSearch('低軌衛星')">低軌衛星</span>
+        <span onclick="quickSearch('電動車')">電動車</span>
+        <span onclick="quickSearch('機器人')">機器人</span>
+        <span onclick="quickSearch('重電')">重電</span>
+        <span onclick="quickSearch('CoWoS')">CoWoS</span>
+        <span onclick="quickSearch('摺疊機')">摺疊機</span>
+      </div>
+    </div>
+    <div class="stats-bar">
+      <span>資料庫：<b class="count" id="totalCount">0</b> 支個股</span>
+      <span>搜尋結果：<b class="count" id="resultCount">0</b> 筆</span>
+      <span>版本：<b class="count" id="dataVersion">-</b></span>
+    </div>
+    <div class="results-grid" id="resultsGrid">
+      <div class="empty-state">
+        <div class="icon">📈</div>
+        <h3>輸入關鍵字開始搜尋</h3>
+        <p>支援股票代號、公司名稱、族群或主題關鍵字</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- GROUPS TAB -->
+  <div id="page-groups" style="display:none">
+    <div style="padding: 20px 0">
+      <div class="group-filters" id="groupFilterBar"></div>
+      <div class="results-grid" id="groupResultsGrid"></div>
+    </div>
+  </div>
+
+  <!-- EDIT TAB -->
+  <div id="page-edit" style="display:none">
+    <div style="padding: 20px 0">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px">
+        <h2 style="font-size:16px; color:var(--text2)">資料管理</h2>
+        <div style="display:flex; gap:8px; flex-wrap:wrap">
+          <button class="btn btn-outline" onclick="exportData()">⬇ 匯出 JSON</button>
+          <label class="btn btn-outline" style="cursor:pointer">
+            ⬆ 匯入 JSON
+            <input type="file" accept=".json" onchange="importData(event)" style="display:none">
+          </label>
+          <button class="btn btn-primary" onclick="openAddModal()">+ 新增個股</button>
+        </div>
+      </div>
+      <div style="background:var(--bg2); border:1px solid var(--border); border-radius:12px; overflow:hidden">
+        <div style="padding:14px 16px; border-bottom:1px solid var(--border); display:flex; gap:10px; align-items:center">
+          <input type="text" id="editSearchInput" placeholder="篩選個股..." style="flex:1; padding:8px 12px; background:var(--bg3); border:1px solid var(--border); border-radius:8px; color:var(--text); font-family:inherit; font-size:13px; outline:none">
+        </div>
+        <div id="editListContainer" style="max-height:600px; overflow-y:auto"></div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- AUDIT TAB -->
+  <div id="page-audit" style="display:none">
+    <div style="padding: 20px 0">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px">
+        <div>
+          <h2 style="font-size:16px; color:var(--text2); margin-bottom:4px">🔎 資料補齊工具</h2>
+          <p style="font-size:12px; color:var(--text3)">逐一核對每個族群，找出缺少的個股並直接補入</p>
+        </div>
+        <div style="display:flex; gap:8px">
+          <button class="btn btn-outline" onclick="runAudit()">重新掃描</button>
+          <button class="btn btn-primary" onclick="auditAddStock()">+ 快速新增</button>
+        </div>
+      </div>
+
+      <!-- Quick add bar -->
+      <div id="auditQuickAdd" style="display:none; background:var(--bg2); border:1px solid var(--accent); border-radius:12px; padding:16px; margin-bottom:16px">
+        <div style="font-size:13px; font-weight:600; color:var(--accent); margin-bottom:12px">⚡ 快速新增個股</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px">
+          <div>
+            <div style="font-size:11px; color:var(--text3); margin-bottom:4px">代號</div>
+            <input id="aqCode" placeholder="例：9955" style="width:100%; padding:8px 10px; background:var(--bg3); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:inherit; font-size:13px; outline:none">
+          </div>
+          <div>
+            <div style="font-size:11px; color:var(--text3); margin-bottom:4px">名稱</div>
+            <input id="aqName" placeholder="例：佳龍" style="width:100%; padding:8px 10px; background:var(--bg3); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:inherit; font-size:13px; outline:none">
+          </div>
+        </div>
+        <div style="margin-bottom:8px">
+          <div style="font-size:11px; color:var(--text3); margin-bottom:4px">族群（用｜分隔）</div>
+          <input id="aqGroups" placeholder="例：黃金避險" style="width:100%; padding:8px 10px; background:var(--bg3); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:inherit; font-size:13px; outline:none">
+        </div>
+        <div style="margin-bottom:8px">
+          <div style="font-size:11px; color:var(--text3); margin-bottom:4px">描述</div>
+          <input id="aqDesc" placeholder="例：黃金回收與貴金屬加工" style="width:100%; padding:8px 10px; background:var(--bg3); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:inherit; font-size:13px; outline:none">
+        </div>
+        <div style="margin-bottom:12px">
+          <div style="font-size:11px; color:var(--text3); margin-bottom:4px">標籤（用｜分隔）</div>
+          <input id="aqTags" placeholder="例：黃金|避險|貴金屬回收" style="width:100%; padding:8px 10px; background:var(--bg3); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:inherit; font-size:13px; outline:none">
+        </div>
+        <div style="display:flex; gap:8px">
+          <button class="btn btn-outline" onclick="document.getElementById('auditQuickAdd').style.display='none'" style="flex:1">取消</button>
+          <button class="btn btn-primary" onclick="auditSaveQuick()" style="flex:2">✓ 儲存</button>
+        </div>
+      </div>
+
+      <!-- Summary stats -->
+      <div id="auditStats" style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:20px"></div>
+
+      <!-- Group audit list -->
+      <div id="auditGroupList"></div>
+    </div>
+  </div>
+
+  <!-- CONFIG TAB -->
+  <div id="page-config" style="display:none">
+    <div class="config-section">
+      <div class="config-card">
+        <h3>🔗 Google Sheets 連接設定</h3>
+        <p>連接 Google Sheets 後，你可以在試算表直接編輯資料，網頁會自動同步。多人協作也更方便。</p>
+
+        <div class="form-group">
+          <label>Google Sheets ID</label>
+          <input class="config-input" id="sheetsId" placeholder="例：1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms" value="">
+        </div>
+
+        <div class="form-group">
+          <label>API Key（可選，唯讀模式）</label>
+          <input class="config-input" id="apiKey" placeholder="Google Cloud Console 取得的 API Key" type="password" value="">
+        </div>
+
+        <div style="display:flex; gap:10px; flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="testSheetsConnection()">測試連接</button>
+          <button class="btn btn-outline" onclick="saveSheetsConfig()">儲存設定</button>
+          <button class="btn btn-outline" onclick="syncFromSheets()">立即同步</button>
+        </div>
+      </div>
+
+      <div class="config-card">
+        <h3>📋 如何取得 Google Sheets API Key</h3>
+        <div class="config-step">
+          <div class="step-num">1</div>
+          <div class="step-content">前往 <strong>Google Cloud Console</strong>：<code>console.cloud.google.com</code>，登入你的 Google 帳號</div>
+        </div>
+        <div class="config-step">
+          <div class="step-num">2</div>
+          <div class="step-content">建立新專案（或選擇現有專案），點選左側選單 <strong>API 和服務 → 程式庫</strong></div>
+        </div>
+        <div class="config-step">
+          <div class="step-num">3</div>
+          <div class="step-content">搜尋 <strong>Google Sheets API</strong> 並啟用它</div>
+        </div>
+        <div class="config-step">
+          <div class="step-num">4</div>
+          <div class="step-content">點選 <strong>憑證 → 建立憑證 → API 金鑰</strong>，複製金鑰貼到上方欄位</div>
+        </div>
+        <div class="config-step">
+          <div class="step-num">5</div>
+          <div class="step-content">開啟你的 Google Sheets，將其設為 <strong>任何知道連結的人都可以檢視</strong>（共用設定），複製網址中的 ID（<code>/d/</code> 和 <code>/edit</code> 之間的部分）</div>
+        </div>
+        <div class="config-step">
+          <div class="step-num">6</div>
+          <div class="step-content">Sheets 的欄位格式：A=代號, B=名稱, C=族群（用|分隔）, D=描述, E=標籤（用|分隔）</div>
+        </div>
+      </div>
+
+      <div class="config-card">
+        <h3>💡 Sheets 格式範例</h3>
+        <p>複製以下格式到你的 Google Sheets 第一列作為標題，從第二列開始填入資料：</p>
+        <div style="background:var(--bg3); padding:14px; border-radius:8px; font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--text2); overflow-x:auto">
+          代號 | 名稱 | 族群 | 描述 | 標籤<br>
+          2002 | 中鋼 | 金屬鋼鐵|機器人 | 電磁鋼片供應AI伺服器馬達 | 鋼鐵|機器人|AI|馬達
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Stock Detail Modal -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal" id="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-code" id="modalCode"></div>
+        <div class="modal-name" id="modalName"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-section">
+        <h4>所屬族群</h4>
+        <div class="modal-groups" id="modalGroups"></div>
+      </div>
+      <div class="modal-section">
+        <h4>核心描述</h4>
+        <div class="modal-desc" id="modalDesc"></div>
+      </div>
+      <div class="modal-section">
+        <h4>關鍵字標籤</h4>
+        <div class="modal-tags" id="modalTags"></div>
+      </div>
+      <div style="display:flex; gap:8px; margin-top:20px; flex-wrap:wrap">
+        <button class="edit-btn" onclick="editFromModal()" style="display:none">✏️ 編輯此個股</button>
+        <button class="edit-btn" onclick="aiAnalyzeStock()" style="display:none">✦ AI 分析此股</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit/Add Stock Modal -->
+<div class="modal-overlay" id="editModalOverlay" onclick="closeEditModal(event)">
+  <div class="modal" id="editModal">
+    <div class="modal-header">
+      <div style="font-size:16px; font-weight:700" id="editModalTitle">編輯個股</div>
+      <button class="modal-close" onclick="closeEditModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="edit-form">
+        <input type="hidden" id="editIndex">
+        <div class="form-group">
+          <label>股票代號</label>
+          <input type="text" id="editCode" placeholder="例：2002">
+        </div>
+        <div class="form-group">
+          <label>公司名稱</label>
+          <input type="text" id="editName" placeholder="例：中鋼">
+        </div>
+        <div class="form-group">
+          <label>族群（用「|」分隔，可多個）</label>
+          <input type="text" id="editGroups" placeholder="例：金屬鋼鐵|機器人|AI概念">
+        </div>
+        <div class="form-group">
+          <label>核心描述</label>
+          <textarea id="editDesc" placeholder="描述這支股票的核心業務與題材"></textarea>
+        </div>
+        <div class="form-group">
+          <label>關鍵字標籤（用「|」分隔）</label>
+          <input type="text" id="editTags" placeholder="例：鋼鐵|機器人|AI|馬達">
+        </div>
+        <div style="display:flex; gap:8px; justify-content:flex-end; padding-top:8px">
+          <button class="btn btn-outline" onclick="closeEditModal()">取消</button>
+          <button class="btn btn-primary" onclick="saveStockEdit()">儲存</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- AI Panel -->
+<div class="ai-panel" id="aiPanel">
+  <div class="ai-panel-header">
+    <div class="ai-panel-title">
+      ✦ AI 更新助手
+      <span class="ai-badge">Claude AI</span>
+    </div>
+    <button class="modal-close" onclick="toggleAIPanel()">✕</button>
+  </div>
+  <div class="ai-panel-body" id="aiPanelBody">
+
+    <!-- Step indicator -->
+    <div style="display:flex; gap:0; margin-bottom:20px; border-radius:10px; overflow:hidden; border:1px solid var(--border)">
+      <div id="step-tab-1" onclick="showAIStep(1)" style="flex:1; padding:10px 6px; text-align:center; font-size:12px; cursor:pointer; background:rgba(0,212,255,0.12); color:var(--accent); font-weight:600; border-right:1px solid var(--border)">① 貼新聞</div>
+      <div id="step-tab-2" onclick="showAIStep(2)" style="flex:1; padding:10px 6px; text-align:center; font-size:12px; cursor:pointer; color:var(--text3); border-right:1px solid var(--border)">② 複製給 Claude</div>
+      <div id="step-tab-3" onclick="showAIStep(3)" style="flex:1; padding:10px 6px; text-align:center; font-size:12px; cursor:pointer; color:var(--text3)">③ 貼回結果</div>
+    </div>
+
+    <!-- STEP 1 -->
+    <div id="ai-step-1">
+      <div class="ai-msg system" style="margin-bottom:14px">
+        📋 <strong>使用方式（3步驟）</strong><br><br>
+        <b>① 貼入新聞</b> → 系統自動組合完整提問<br>
+        <b>② 一鍵複製</b> → 貼到 Claude.ai 取得分析<br>
+        <b>③ 貼回結果</b> → 系統解析並顯示「套用」按鈕
+      </div>
+      <div style="font-size:12px; color:var(--text3); margin-bottom:8px">貼上你看到的新聞或消息：</div>
+      <textarea id="aiInput" placeholder="例：中鋼（2002）宣布與台積電合作，將供應AI伺服器馬達所需電磁鋼片，並跨入機器人零組件製造..." style="width:100%; padding:12px 14px; background:var(--bg3); border:1px solid var(--border); border-radius:10px; color:var(--text); font-size:13px; font-family:inherit; resize:none; min-height:100px; outline:none; margin-bottom:10px; transition:border-color 0.2s; display:block"></textarea>
+      <button class="btn btn-ai" onclick="prepareAIPrompt()" style="width:100%">① 組合提問 →</button>
+    </div>
+
+    <!-- STEP 2 -->
+    <div id="ai-step-2" style="display:none">
+      <div class="ai-msg system" style="margin-bottom:14px">
+        ✅ 提問已組合完成！<br><br>
+        點下方「複製提問」→ 開啟 Claude.ai → 貼上並送出 → 把 Claude 的回覆複製回來
+      </div>
+      <div style="font-size:12px; color:var(--text3); margin-bottom:8px">已組合的完整提問（可預覽）：</div>
+      <textarea id="aiPromptPreview" readonly style="width:100%; padding:12px 14px; background:var(--bg3); border:1px solid var(--border); border-radius:10px; color:var(--text2); font-size:11px; font-family:'JetBrains Mono',monospace; resize:none; height:160px; outline:none; margin-bottom:12px; display:block"></textarea>
+      <div style="display:flex; gap:8px; margin-bottom:12px">
+        <button class="btn btn-ai" onclick="copyPrompt()" style="flex:2" id="copyBtn">📋 複製提問</button>
+        <button onclick="window.open('https://claude.ai','_blank')" style="flex:1; padding:8px; background:rgba(168,85,247,0.15); border:1px solid rgba(168,85,247,0.4); border-radius:8px; color:#c084fc; font-size:12px; cursor:pointer; font-family:inherit">開啟 Claude.ai ↗</button>
+      </div>
+      <div style="background:rgba(255,209,102,0.08); border:1px solid rgba(255,209,102,0.2); border-radius:8px; padding:10px 14px; font-size:12px; color:var(--yellow)">
+        💡 在 Claude.ai 取得回覆後，全選複製回覆內容，回到這裡點「③ 貼回結果」
+      </div>
+    </div>
+
+    <!-- STEP 3 -->
+    <div id="ai-step-3" style="display:none">
+      <div style="font-size:12px; color:var(--text3); margin-bottom:8px">把 Claude 的回覆貼在這裡：</div>
+      <textarea id="aiReplyInput" placeholder="貼上從 Claude.ai 複製的回覆內容..." style="width:100%; padding:12px 14px; background:var(--bg3); border:1px solid var(--border); border-radius:10px; color:var(--text); font-size:13px; font-family:inherit; resize:none; min-height:120px; outline:none; margin-bottom:10px; display:block"></textarea>
+      <button class="btn btn-primary" onclick="parseAIReply()" style="width:100%; margin-bottom:12px">解析並顯示建議 →</button>
+      <div id="parsedSuggestions"></div>
+    </div>
+
+  </div>
+  <div style="border-top:1px solid var(--border); padding:12px 20px; display:flex; gap:8px">
+    <button class="btn btn-outline" onclick="resetAIPanel()" style="flex:1; font-size:12px">↺ 重新開始</button>
+    <button class="btn btn-outline" onclick="toggleAIPanel()" style="flex:1; font-size:12px">關閉</button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// DATA LAYER
+// ============================================================
+let stocksData = { stocks: [], version: '-', lastUpdated: '-' };
+let currentModalStock = null;
+let currentTab = 'search';
+let activeGroupFilter = null;
+
+// Load embedded data
+const EMBEDDED_DATA = {"stocks": [{"code": "3035", "name": "智原", "groups": ["IC半導體", "ASIC矽智財"], "description": "跨入先進製程與ARM設計服務", "tags": ["IC設計", "ARM", "設計服務", "ASIC"]}, {"code": "6104", "name": "創惟", "groups": ["IC半導體", "任天堂", "低軌衛星"], "description": "IC設計", "tags": ["IC設計", "USB", "傳輸", "任天堂", "Switch"]}, {"code": "4961", "name": "天鈺", "groups": ["IC半導體", "鴻海集團"], "description": "IC設計", "tags": ["IC設計", "AI伺服器"]}, {"code": "3545", "name": "敦泰", "groups": ["IC半導體"], "description": "IC設計觸控", "tags": ["IC設計", "觸控"]}, {"code": "2363", "name": "矽統", "groups": ["IC半導體", "聯電集團"], "description": "IC設計", "tags": ["IC設計"]}, {"code": "8054", "name": "安國", "groups": ["IC半導體", "神盾集團"], "description": "併購星河半導體，轉型ASIC與IP服務商，與神盾連動最強", "tags": ["IC設計", "ASIC", "IP"]}, {"code": "6684", "name": "安格", "groups": ["IC半導體", "神盾集團"], "description": "USB 4與高階影像傳輸介面", "tags": ["IC設計", "USB4", "影像傳輸"]}, {"code": "6237", "name": "驊訊", "groups": ["IC半導體", "元宇宙", "AR眼鏡"], "description": "音訊晶片設計", "tags": ["IC設計", "音效", "語音AI"]}, {"code": "6695", "name": "芯鼎", "groups": ["IC半導體", "神盾集團"], "description": "AI影像處理ISP與車用感測晶片", "tags": ["IC設計", "AI影像", "車用", "ISP"]}, {"code": "6243", "name": "迅杰", "groups": ["IC半導體", "神盾集團"], "description": "筆電電源管理IC、觸控IC與高速傳輸週邊", "tags": ["IC設計", "電源管理", "PMIC", "觸控"]}, {"code": "3041", "name": "揚智", "groups": ["IC半導體"], "description": "IC設計", "tags": ["IC設計"]}, {"code": "3661", "name": "世芯-KY", "groups": ["IC半導體", "ASIC矽智財"], "description": "全球AI ASIC領頭羊，綁定AWS、Google雲端晶片", "tags": ["ASIC", "AI", "雲端晶片", "IC設計"]}, {"code": "3443", "name": "創意", "groups": ["IC半導體", "ASIC矽智財", "台積設備", "台積電集團"], "description": "台積電轉投資，掌握HBM封裝與高階IP", "tags": ["ASIC", "HBM", "IP", "先進封裝", "AI先進製程", "CoWoS"]}, {"code": "6643", "name": "M31", "groups": ["IC半導體", "ASIC矽智財"], "description": "高速傳輸IP專家，ASIC設計必備元件", "tags": ["IP", "ASIC", "高速傳輸"]}, {"code": "3529", "name": "力旺", "groups": ["IC半導體", "ASIC矽智財"], "description": "非揮發性記憶體IP，先進製程安全性IP獨佔", "tags": ["IP", "記憶體", "安全", "先進製程"]}, {"code": "6533", "name": "晶心科", "groups": ["IC半導體", "ASIC矽智財"], "description": "RISC-V架構龍頭，避開ARM壟斷的首選", "tags": ["RISC-V", "IP", "IC設計"]}, {"code": "6531", "name": "愛普", "groups": ["IC半導體", "記憶體"], "description": "VHM虛擬高頻寬記憶體，3D堆疊AI推論晶片指標", "tags": ["記憶體", "HBM", "AI推論", "3D堆疊"]}, {"code": "2454", "name": "聯發科", "groups": ["IC半導體", "元宇宙"], "description": "IC晶片龍頭，與Meta合作開發AR晶片", "tags": ["IC設計", "晶片", "AR", "5G", "AI"]}, {"code": "2379", "name": "瑞昱", "groups": ["IC半導體", "元宇宙", "任天堂"], "description": "網路與音訊處理晶片，任天堂Switch音效控制晶片", "tags": ["IC設計", "網路", "音效", "Switch"]}, {"code": "6526", "name": "達發", "groups": ["IC半導體"], "description": "IC晶片設計", "tags": ["IC設計"]}, {"code": "3034", "name": "聯詠", "groups": ["IC半導體", "聯電集團"], "description": "顯示驅動IC龍頭", "tags": ["IC設計", "顯示", "驅動IC"]}, {"code": "5269", "name": "祥碩", "groups": ["IC半導體", "元宇宙", "華碩集團"], "description": "高速傳輸介面晶片", "tags": ["IC設計", "高速傳輸", "USB"]}, {"code": "2330", "name": "台積電", "groups": ["IC半導體", "矽晶圓", "台積電集團"], "description": "全球晶圓代工龍頭，GaN-on-Si技術2026年已成標配", "tags": ["晶圓代工", "先進製程", "GaN", "2nm", "3nm", "AI", "CoWoS", "台積電", "AI先進製程"]}, {"code": "5347", "name": "世界", "groups": ["IC半導體", "台積電集團"], "description": "晶圓代工", "tags": ["晶圓代工", "AI先進製程", "CoWoS"]}, {"code": "6770", "name": "力積電", "groups": ["IC半導體", "記憶體"], "description": "P5廠轉型3D晶圓堆疊WoW核心中心", "tags": ["晶圓代工", "記憶體", "3D WoW", "堆疊"]}, {"code": "2342", "name": "茂矽", "groups": ["IC半導體", "矽晶圓"], "description": "鴻海集團入股，專攻MOSFET與IGBT晶圓代工，轉向車用SiC", "tags": ["晶圓代工", "MOSFET", "SiC", "車用", "第三代半導體"]}, {"code": "2303", "name": "聯電", "groups": ["IC半導體", "聯電集團"], "description": "晶圓代工", "tags": ["晶圓代工"]}, {"code": "3711", "name": "日月光投控", "groups": ["IC半導體"], "description": "封測龍頭", "tags": ["封測", "先進封裝", "OSAT"]}, {"code": "2449", "name": "京元電子", "groups": ["IC半導體", "台積設備"], "description": "AI晶片最終測試（Final Test）唯一指標", "tags": ["封測", "測試", "AI晶片"]}, {"code": "6239", "name": "力成", "groups": ["IC半導體", "記憶體"], "description": "HBM先進封裝與TSV技術關鍵指標", "tags": ["封測", "HBM", "先進封裝", "TSV"]}, {"code": "6451", "name": "訊芯-KY", "groups": ["IC半導體", "矽光子", "鴻海集團"], "description": "先進封裝", "tags": ["封測", "先進封裝", "CPO", "鴻海", "集團股", "AI伺服器"]}, {"code": "8150", "name": "南茂", "groups": ["IC半導體", "記憶體"], "description": "伺服器記憶體與SSD封測", "tags": ["封測", "記憶體", "SSD"]}, {"code": "2441", "name": "超豐", "groups": ["IC半導體"], "description": "IC封測", "tags": ["封測"]}, {"code": "2329", "name": "華泰", "groups": ["IC半導體", "記憶體"], "description": "伺服器記憶體與SSD封測", "tags": ["封測", "記憶體", "SSD"]}, {"code": "3264", "name": "欣銓", "groups": ["IC半導體"], "description": "IC封測", "tags": ["封測"]}, {"code": "6257", "name": "矽格", "groups": ["IC半導體"], "description": "IC封測", "tags": ["封測"]}, {"code": "3450", "name": "聯鈞", "groups": ["IC半導體", "矽光子", "網通"], "description": "光通訊模組與元件", "tags": ["封測", "光通訊", "矽光子", "CPO"]}, {"code": "6147", "name": "頎邦", "groups": ["IC半導體", "任天堂", "低軌衛星"], "description": "驅動IC封測", "tags": ["封測", "驅動IC"]}, {"code": "6515", "name": "穎崴", "groups": ["IC半導體", "探針卡"], "description": "高階測試座指標，切入CoWoS與AI晶片最終測試", "tags": ["封測", "探針卡", "CoWoS", "AI晶片"]}, {"code": "2337", "name": "旺宏", "groups": ["IC半導體", "記憶體", "任天堂"], "description": "ROM/NOR龍頭，跨足車用與AI存儲，遊戲卡帶ROM", "tags": ["記憶體", "NOR Flash", "ROM", "車用", "AI存儲", "遊戲卡帶"]}, {"code": "2344", "name": "華邦電", "groups": ["IC半導體", "記憶體", "華新麗華集團"], "description": "AI推論專用記憶體，編碼快閃記憶體", "tags": ["記憶體", "DRAM", "AI推論", "快閃記憶體", "記憶體漲價", "被動元件漲價", "PCB缺料"]}, {"code": "6488", "name": "環球晶", "groups": ["IC半導體", "矽晶圓"], "description": "全球第三大矽晶圓廠，2026美國新廠產能開出，掌握12吋高階技術", "tags": ["矽晶圓", "12吋", "先進製程"]}, {"code": "2408", "name": "南亞科", "groups": ["IC半導體", "記憶體", "台塑集團"], "description": "DRAM轉向高階製程", "tags": ["記憶體", "DRAM", "DDR5", "PCB電子材料", "ABF", "漲價"]}, {"code": "6182", "name": "合晶", "groups": ["IC半導體", "矽晶圓"], "description": "重摻矽晶圓龍頭，與車用功率半導體連動性最高", "tags": ["矽晶圓", "車用", "功率半導體"]}, {"code": "3532", "name": "台勝科", "groups": ["IC半導體", "矽晶圓", "台塑集團"], "description": "台塑集團與日商SUMCO合資，專攻12吋純矽晶圓供應", "tags": ["矽晶圓", "12吋", "PCB電子材料", "ABF", "漲價"]}, {"code": "5483", "name": "中美晶", "groups": ["矽晶圓"], "description": "控股集團核心，買它等於買下環球晶+宏捷科+朋程", "tags": ["矽晶圓", "第三代半導體"]}, {"code": "2340", "name": "台亞", "groups": ["矽晶圓"], "description": "日亞化背景，成功轉型SiC第三代半導體與感測元件", "tags": ["矽晶圓", "SiC", "第三代半導體", "感測"]}, {"code": "3016", "name": "嘉晶", "groups": ["矽晶圓"], "description": "漢磊集團，台灣唯一具備SiC/GaN磊晶量產能力的純磊晶廠", "tags": ["矽晶圓", "SiC", "GaN", "磊晶", "第三代半導體"]}, {"code": "3707", "name": "漢磊", "groups": ["矽晶圓"], "description": "台灣第三代半導體代工先驅，2026年8吋SiC產線進入主流", "tags": ["矽晶圓", "SiC", "第三代半導體", "晶圓代工"]}, {"code": "8299", "name": "群聯", "groups": ["記憶體"], "description": "AI伺服器SSD控制器龍頭，CXL介面技術", "tags": ["記憶體", "SSD", "控制器", "CXL", "AI伺服器"]}, {"code": "5351", "name": "鈺創", "groups": ["記憶體"], "description": "記憶體控制IC", "tags": ["記憶體", "控制IC"]}, {"code": "3006", "name": "晶豪科", "groups": ["記憶體"], "description": "記憶體控制IC", "tags": ["記憶體", "控制IC"]}, {"code": "6485", "name": "點序", "groups": ["記憶體"], "description": "記憶體控制IC", "tags": ["記憶體", "控制IC"]}, {"code": "5289", "name": "宜鼎", "groups": ["記憶體"], "description": "工控與AIoT龍頭，轉型AI解決方案供應商", "tags": ["記憶體", "模組", "AIoT", "工控", "AI"]}, {"code": "6790", "name": "十詮", "groups": ["記憶體", "綠色能源", "太陽能"], "description": "AI伺服器高規記憶體，DDR5庫存增值受惠者", "tags": ["記憶體", "DDR5", "AI伺服器", "模組", "風電", "太陽能", "綠能", "儲能"]}, {"code": "3260", "name": "威剛", "groups": ["記憶體"], "description": "AI伺服器高規記憶體，DDR5庫存增值受惠者", "tags": ["記憶體", "DDR5", "AI伺服器", "模組"]}, {"code": "8271", "name": "宇瞻", "groups": ["記憶體"], "description": "記憶體模組", "tags": ["記憶體", "模組"]}, {"code": "2451", "name": "創見", "groups": ["記憶體"], "description": "記憶體模組", "tags": ["記憶體", "模組"]}, {"code": "8131", "name": "福懋科", "groups": ["記憶體", "台塑集團", "塑化"], "description": "記憶體封測", "tags": ["記憶體", "封測", "PCB電子材料", "ABF", "漲價", "塑化", "化纖", "台塑"]}, {"code": "8110", "name": "華東", "groups": ["記憶體", "華新麗華集團"], "description": "記憶體封測", "tags": ["記憶體", "封測", "記憶體漲價", "被動元件漲價", "PCB缺料"]}, {"code": "3217", "name": "優群", "groups": ["記憶體", "連接器"], "description": "DDR5連接器龍頭，伺服器換機受惠", "tags": ["記憶體", "連接器", "DDR5", "伺服器"]}, {"code": "8112", "name": "至上", "groups": ["記憶體"], "description": "三星HBM與記憶體在台主要分銷代理商", "tags": ["記憶體", "HBM", "代理", "三星"]}, {"code": "3533", "name": "嘉澤", "groups": ["記憶體"], "description": "高階伺服器Socket指標", "tags": ["記憶體", "Socket", "伺服器", "連接器"]}, {"code": "6138", "name": "茂達", "groups": ["記憶體", "任天堂", "低軌衛星", "電源管理IC", "MOSFET二極體"], "description": "DDR5核心PMIC供應商", "tags": ["記憶體", "PMIC", "DDR5", "電源管理", "茂達集團", "母公司大中", "電源管理IC", "功率半導體", "AI伺服器", "風扇馬達"]}, {"code": "4919", "name": "新唐", "groups": ["MCU半導體", "華新麗華集團"], "description": "車用與工控MCU龍頭，具備AI推論能力", "tags": ["MCU", "車用", "工控", "AI推論", "AIoT", "記憶體漲價", "被動元件漲價", "PCB缺料"]}, {"code": "6202", "name": "盛群", "groups": ["MCU半導體", "聯電集團"], "description": "消費性與工業MCU", "tags": ["MCU", "消費性", "工業"]}, {"code": "5471", "name": "松翰", "groups": ["MCU半導體"], "description": "消費性與工業MCU", "tags": ["MCU"]}, {"code": "6223", "name": "旺矽", "groups": ["探針卡", "矽光子"], "description": "高階垂直探針卡龍頭，受惠GPU與HBM測試量大增，矽光子探針卡測試", "tags": ["探針卡", "GPU", "HBM", "測試", "矽光子"]}, {"code": "6510", "name": "精測", "groups": ["探針卡", "矽光子"], "description": "ALL-IN-ONE探針卡，手機與AI晶片並重，矽光子探針卡測試", "tags": ["探針卡", "AI晶片", "矽光子", "測試"]}, {"code": "6683", "name": "雍智科技", "groups": ["探針卡"], "description": "IC測試載板，配合探針卡出貨", "tags": ["探針卡", "測試載板"]}, {"code": "6217", "name": "中探針", "groups": ["探針卡"], "description": "Pogo Pin探針龍頭，跨足電動車與測試接點", "tags": ["探針卡", "電動車"]}, {"code": "3105", "name": "穩懋", "groups": ["砷化鎵射頻", "磷化銦"], "description": "GaN-on-Si，衛星通訊，SpaceX與Amazon低軌衛星地面站核心供應商，全球化合物半導體代工龍頭", "tags": ["砷化鎵", "GaN", "PA", "低軌衛星", "射頻"]}, {"code": "2455", "name": "全新", "groups": ["砷化鎵射頻", "矽光子", "磷化銦"], "description": "CPO元年，800G & 1.6T光模組，VCSEL磊晶，從GaAs跨入InP磊晶", "tags": ["砷化鎵", "CPO", "800G", "1.6T", "光模組", "VCSEL", "磷化銦"]}, {"code": "8086", "name": "宏捷科", "groups": ["砷化鎵射頻", "磷化銦", "軍工無人機"], "description": "Wi-Fi 7爆發，中高階安卓機市佔，太陽能抗輻射材料，無人機用太陽能板", "tags": ["砷化鎵", "Wi-Fi 7", "PA", "無人機", "太陽能"]}, {"code": "3081", "name": "聯亞", "groups": ["砷化鎵射頻", "矽光子", "磷化銦"], "description": "2026矽光子龍頭，專攻InP磊晶，矽光子/CPO族群領頭羊", "tags": ["矽光子", "CPO", "磷化銦", "InP", "光通訊"]}, {"code": "4991", "name": "環宇-KY", "groups": ["砷化鎵射頻", "矽光子", "磷化銦"], "description": "高階數據中心光通訊晶片，三五族代工大廠", "tags": ["砷化鎵", "光通訊", "矽光子", "CPO", "磷化銦"]}, {"code": "4968", "name": "立積", "groups": ["砷化鎵射頻"], "description": "Wi-Fi 7 FEM核心供應商，與宏捷科高度連動", "tags": ["砷化鎵", "Wi-Fi 7", "射頻前端"]}, {"code": "4971", "name": "IET-KY", "groups": ["矽光子", "磷化銦"], "description": "英特磊，擁有高階MBE磊晶技術，主攻InP衛星與國防應用", "tags": ["矽光子", "磷化銦", "InP", "衛星", "國防", "磊晶"]}, {"code": "6706", "name": "惠特", "groups": ["矽光子", "Micro LED"], "description": "測試與挑揀，Micro LED點測與分選設備龍頭", "tags": ["矽光子", "測試", "Micro LED", "分選"]}, {"code": "6442", "name": "光聖", "groups": ["矽光子"], "description": "光通訊模組與元件", "tags": ["矽光子", "光通訊", "模組"]}, {"code": "4979", "name": "華星光", "groups": ["矽光子", "網通"], "description": "光通訊模組與元件", "tags": ["矽光子", "光通訊", "網通"]}, {"code": "4977", "name": "眾達-KY", "groups": ["矽光子"], "description": "光通訊模組與元件", "tags": ["矽光子", "光通訊", "模組"]}, {"code": "3363", "name": "上銓", "groups": ["矽光子"], "description": "光通訊模組與元件", "tags": ["矽光子", "光通訊"]}, {"code": "4908", "name": "前鼎", "groups": ["矽光子"], "description": "光通訊模組與元件", "tags": ["矽光子", "光通訊"]}, {"code": "3163", "name": "波若威", "groups": ["矽光子", "網通"], "description": "光通訊模組與元件", "tags": ["矽光子", "光通訊", "網通"]}, {"code": "6549", "name": "創威", "groups": ["矽光子"], "description": "光通訊模組與元件", "tags": ["矽光子", "光通訊", "模組", "CPO", "800G"]}, {"code": "3025", "name": "星通", "groups": ["矽光子", "網通"], "description": "光通訊模組與元件", "tags": ["矽光子", "光通訊", "網通"]}, {"code": "3234", "name": "光環", "groups": ["矽光子"], "description": "光通訊模組與元件", "tags": ["矽光子", "光通訊"]}, {"code": "7842", "name": "印能科技", "groups": ["矽光子"], "description": "氣壓去泡設備，CPO關鍵設備", "tags": ["矽光子", "CPO", "設備"]}, {"code": "6830", "name": "汎銓", "groups": ["矽光子", "台積設備"], "description": "矽光子晶片失效分析（MA），2nm與CoWoS的材料分析龍頭", "tags": ["矽光子", "材料分析", "CoWoS", "2nm"]}, {"code": "6860", "name": "鴻勁", "groups": ["矽光子"], "description": "CPO測試介面，高速選別機", "tags": ["矽光子", "CPO", "測試", "選別機"]}, {"code": "3265", "name": "台星科", "groups": ["矽光子", "IC半導體"], "description": "先進封裝", "tags": ["矽光子", "先進封裝", "CPO"]}, {"code": "6588", "name": "東典光電", "groups": ["矽光子", "薄膜濾光片"], "description": "光通訊濾光片，5G與資料中心網路", "tags": ["矽光子", "濾光片", "5G", "光通訊"]}, {"code": "6426", "name": "統新", "groups": ["矽光子", "薄膜濾光片"], "description": "高階薄膜濾光片TFF，矽光子模組關鍵零件", "tags": ["矽光子", "濾光片", "薄膜"]}, {"code": "4903", "name": "聯光通", "groups": ["矽光子"], "description": "光通訊相關材料", "tags": ["矽光子", "光通訊"]}, {"code": "8111", "name": "立碁", "groups": ["矽光子", "Micro LED"], "description": "利基型LED與封裝，光通訊相關", "tags": ["矽光子", "LED", "封裝"]}, {"code": "8067", "name": "光鋐", "groups": ["矽光子", "Micro LED"], "description": "利基型LED，光通訊相關", "tags": ["矽光子", "LED"]}, {"code": "3037", "name": "欣興", "groups": ["PCB載板", "任天堂", "聯電集團", "低軌衛星"], "description": "載板三雄之一，高階載板", "tags": ["PCB", "ABF", "載板", "AI伺服器", "Switch"]}, {"code": "8046", "name": "南電", "groups": ["PCB載板", "台塑集團"], "description": "載板三雄之一", "tags": ["PCB", "ABF", "載板", "PCB電子材料", "漲價"]}, {"code": "3189", "name": "景碩", "groups": ["PCB載板", "和碩集團"], "description": "載板三雄之一", "tags": ["PCB", "ABF", "載板"]}, {"code": "4958", "name": "臻鼎-KY", "groups": ["PCB載板", "任天堂", "鴻海集團", "低軌衛星"], "description": "全球PCB龍頭，積極擴張載板營收", "tags": ["PCB", "載板", "FPC", "軟板", "AI伺服器"]}, {"code": "8403", "name": "悅城", "groups": ["PCB載板", "玻璃載板", "扇形封裝"], "description": "玻璃薄化與拋光，玻璃基板核心加工", "tags": ["玻璃基板", "薄化", "拋光", "FOPLP", "扇形封裝"]}, {"code": "3149", "name": "正達", "groups": ["PCB載板", "玻璃載板", "扇形封裝", "鴻海集團"], "description": "玻璃導電與加工，3D玻璃加工，鴻海集團軍", "tags": ["玻璃基板", "3D玻璃", "鴻海", "AI伺服器"]}, {"code": "3615", "name": "安可", "groups": ["PCB載板", "玻璃載板", "扇形封裝", "錸德集團"], "description": "玻璃導電與加工，玻璃鍍膜技術，切入半導體玻璃基板供應", "tags": ["玻璃基板", "鍍膜", "FOPLP", "錸德"]}, {"code": "1802", "name": "台玻", "groups": ["PCB載板", "玻璃載板", "CCL銅箔基板"], "description": "低損耗電子級玻纖布，跨足玻璃基板材料", "tags": ["玻璃基板", "玻纖布", "CCL"]}, {"code": "2383", "name": "台光電", "groups": ["PCB載板", "低軌衛星", "CCL銅箔基板"], "description": "AI伺服器CCL龍頭，高頻高速CCL", "tags": ["CCL", "銅箔基板", "AI伺服器", "衛星", "高頻"]}, {"code": "6274", "name": "台燿", "groups": ["PCB載板", "低軌衛星", "CCL銅箔基板"], "description": "高頻高速傳輸材料，高階衛星板", "tags": ["CCL", "高頻", "高速傳輸", "衛星", "銅箔基板"]}, {"code": "6213", "name": "聯茂", "groups": ["PCB載板", "CCL銅箔基板"], "description": "車用與網通CCL", "tags": ["CCL", "車用", "網通", "銅箔基板", "AI伺服器"]}, {"code": "8358", "name": "金居", "groups": ["PCB載板", "光寶集團", "CCL銅箔基板"], "description": "高階電解銅箔", "tags": ["銅箔", "CCL", "AI伺服器電源", "電解銅箔"]}, {"code": "1303", "name": "南亞", "groups": ["PCB載板", "台塑集團", "塑化"], "description": "關鍵電子級玻纖布與樹脂供應商，除塑化業務外電子材料部門供應玻纖布與環氧樹脂", "tags": ["CCL", "玻纖布", "環氧樹脂", "台塑四寶", "PCB電子材料", "ABF", "漲價", "塑化", "塑膠", "電子材料"]}, {"code": "1815", "name": "富喬", "groups": ["PCB載板", "玻璃載板", "CCL銅箔基板"], "description": "電子級玻纖布", "tags": ["玻纖布", "CCL", "AI伺服器"]}, {"code": "2368", "name": "金像電", "groups": ["PCB載板"], "description": "全球最大伺服器用板製造商", "tags": ["PCB", "伺服器", "AI伺服器"]}, {"code": "6269", "name": "台郡", "groups": ["PCB載板", "任天堂", "低軌衛星"], "description": "軟板轉型AI高速傳輸，FPC柔性電路板", "tags": ["PCB", "軟板", "FPC", "AI", "Switch"]}, {"code": "6664", "name": "群翊", "groups": ["PCB載板"], "description": "烘烤設備龍頭，玻璃基板關鍵製程", "tags": ["PCB設備", "玻璃基板", "烘烤"]}, {"code": "8027", "name": "鈦昇", "groups": ["PCB載板"], "description": "雷射鑽孔，玻璃基板切割技術", "tags": ["PCB設備", "雷射鑽孔", "玻璃基板"]}, {"code": "3481", "name": "群創", "groups": ["扇形封裝", "特斯拉", "鴻海集團"], "description": "轉型FOPLP領頭羊，2026封裝營收佔比大幅提升，車用面板", "tags": ["面板", "FOPLP", "扇形封裝", "TFT", "車用面板", "鴻海", "集團股", "AI伺服器"]}, {"code": "2409", "name": "友達", "groups": ["扇形封裝", "特斯拉", "友達集團"], "description": "積極布局玻璃基板封裝與大型面板級封裝，車用面板", "tags": ["面板", "FOPLP", "玻璃基板", "車用面板"]}, {"code": "8069", "name": "元太", "groups": ["扇形封裝", "電子紙", "永豐餘集團"], "description": "電子紙龍頭，全球電子紙壟斷龍頭，2026彩色電子紙Spectra 6爆發", "tags": ["電子紙", "面板", "彩色電子紙"]}, {"code": "2404", "name": "漢唐", "groups": ["台積設備", "無塵室"], "description": "台積電無塵室工程最大統包商，在手訂單逾千億", "tags": ["台積設備", "無塵室", "工程"]}, {"code": "6196", "name": "帆宣", "groups": ["台積設備", "鴻海集團", "無塵室"], "description": "負責無塵室及設備安裝，並代工ASML部分組裝", "tags": ["台積設備", "無塵室", "ASML", "AI伺服器"]}, {"code": "6667", "name": "信紘科", "groups": ["台積設備", "無塵室"], "description": "高階化學供應系統與廢液處理", "tags": ["台積設備", "化學供應", "廢液", "無塵室"]}, {"code": "6139", "name": "亞翔", "groups": ["台積設備", "無塵室"], "description": "機電整合與高階無塵室工程", "tags": ["台積設備", "無塵室", "機電"]}, {"code": "1560", "name": "中砂", "groups": ["台積設備"], "description": "鑽石碟龍頭，2nm/3nm CMP製程必備，市佔率極高", "tags": ["台積設備", "CMP", "耗材", "2nm", "3nm"]}, {"code": "3680", "name": "家登", "groups": ["台積設備"], "description": "光罩載具（EUV Pod）龍頭，FOUP產能全面爆發", "tags": ["台積設備", "EUV", "光罩", "FOUP", "耗材"]}, {"code": "8028", "name": "昇陽半導體", "groups": ["台積設備"], "description": "高階再生晶圓與薄化技術，CoWoS晶片薄化關鍵", "tags": ["台積設備", "CoWoS", "再生晶圓", "薄化"]}, {"code": "3131", "name": "弘塑", "groups": ["台積設備"], "description": "濕製程清洗，CoWoS製程設備", "tags": ["台積設備", "CoWoS", "濕製程", "清洗"]}, {"code": "3583", "name": "辛耘", "groups": ["台積設備"], "description": "濕製程清洗，CoWoS製程設備", "tags": ["台積設備", "CoWoS", "濕製程"]}, {"code": "6207", "name": "雷科", "groups": ["台積設備"], "description": "CoWoS雷射鑽孔與切割，2026先進封裝隱形冠軍", "tags": ["台積設備", "CoWoS", "雷射", "先進封裝"]}, {"code": "3587", "name": "閎康", "groups": ["台積設備"], "description": "全球布局最強的第三方檢測分析實驗室", "tags": ["台積設備", "材料分析", "檢測"]}, {"code": "4772", "name": "台特化", "groups": ["特用化學"], "description": "特高純度矽乙烷（Disilane），先進製程薄膜沉積關鍵材料", "tags": ["特用化學", "先進製程", "薄膜沉積", "2nm"]}, {"code": "4749", "name": "新應材", "groups": ["特用化學"], "description": "台積電3nm/2nm特規光阻劑、黃光製程化學品", "tags": ["特用化學", "光阻劑", "3nm", "2nm", "台積電"]}, {"code": "4768", "name": "晶呈科技", "groups": ["特用化學"], "description": "半導體特殊氣體製造與鋼瓶再利用技術", "tags": ["特用化學", "特殊氣體", "半導體"]}, {"code": "5234", "name": "達興材料", "groups": ["特用化學"], "description": "CoWoS封裝用導熱、絕緣材料", "tags": ["特用化學", "CoWoS", "封裝材料"]}, {"code": "1717", "name": "長興", "groups": ["特用化學"], "description": "全球乾膜光阻龍頭", "tags": ["特用化學", "光阻劑", "乾膜"]}, {"code": "1785", "name": "光洋科", "groups": ["特用化學", "黃金避險"], "description": "台積電靶材（PVD）合格供應商，貴金屬回收", "tags": ["特用化學", "靶材", "PVD", "貴金屬"]}, {"code": "6462", "name": "神盾", "groups": ["神盾集團"], "description": "集團核心，轉型AI IP授權與先進封裝技術提供者，2026轉型重點UCIe介面與Chiplet小晶片設計", "tags": ["IP授權", "先進封裝", "AI", "Chiplet", "UCIe"]}, {"code": "3530", "name": "晶相光", "groups": ["神盾集團"], "description": "CMOS影像感測器，智慧監控與車用", "tags": ["感測器", "CIS", "CMOS", "車用", "監控"]}, {"code": "2401", "name": "凌陽", "groups": ["凌陽集團"], "description": "集團領頭羊，2026車用營收佔比達50%，主攻AI系統級晶片", "tags": ["IC設計", "車用", "AI晶片", "SoC"]}, {"code": "5236", "name": "凌陽創新", "groups": ["凌陽集團"], "description": "專攻AI影像處理晶片，AI NB與智慧鏡頭核心", "tags": ["IC設計", "AI影像", "NB", "鏡頭"]}, {"code": "4952", "name": "凌通", "groups": ["凌陽集團", "MCU半導體"], "description": "MCU與語音IC，受惠於智慧玩具與穿戴裝置", "tags": ["MCU", "語音IC", "玩具", "穿戴"]}, {"code": "3042", "name": "晶技", "groups": ["石英元件"], "description": "全球龍頭，2026年4月啟動5-10%漲價，打入LEO低軌衛星大單", "tags": ["石英", "石英元件", "低軌衛星", "LEO"]}, {"code": "2484", "name": "希華", "groups": ["石英元件"], "description": "受惠龍頭漲價帶動的比價效應", "tags": ["石英", "石英元件"]}, {"code": "5299", "name": "杰力", "groups": ["MOSFET二極體", "電源管理IC"], "description": "商用NB核心，2026跨入AI伺服器電源", "tags": ["MOSFET", "電源", "AI伺服器", "NB", "PMIC", "功率半導體", "電源管理IC"]}, {"code": "8261", "name": "富鼎", "groups": ["MOSFET二極體", "電源管理IC"], "description": "鴻海集團，2026鴻海電動車與BBU核心元件", "tags": ["MOSFET", "電動車", "BBU", "鴻海", "PMIC", "功率半導體", "電源管理IC"]}, {"code": "8255", "name": "朋程", "groups": ["MOSFET二極體", "光寶集團"], "description": "車用發電機二極體全球龍頭", "tags": ["二極體", "車用", "發電機", "AI伺服器電源"]}, {"code": "3675", "name": "德微", "groups": ["MOSFET二極體"], "description": "達爾集團，高階自動化封裝，毛利之王", "tags": ["二極體", "自動化封裝"]}, {"code": "5425", "name": "台半", "groups": ["MOSFET二極體", "汽車車用相關"], "description": "工控與車用二極體雙棲", "tags": ["二極體", "工控", "車用"]}, {"code": "2481", "name": "強茂", "groups": ["MOSFET二極體", "汽車車用相關"], "description": "產能最大，產品線最廣", "tags": ["二極體", "MOSFET", "車用"]}, {"code": "3231", "name": "緯創", "groups": ["AI伺服器", "筆電"], "description": "AI伺服器代工", "tags": ["AI伺服器", "伺服器", "代工", "NB", "筆電", "AI PC"]}, {"code": "2382", "name": "廣達", "groups": ["AI伺服器", "筆電"], "description": "AI伺服器與高階NB領先者", "tags": ["AI伺服器", "NB", "代工"]}, {"code": "2356", "name": "英業達", "groups": ["AI伺服器", "筆電"], "description": "AI PC與伺服器雙引擎", "tags": ["AI伺服器", "NB", "AI PC"]}, {"code": "2317", "name": "鴻海", "groups": ["AI伺服器", "任天堂", "鴻海集團"], "description": "AI伺服器代工，任天堂Switch主機總組裝", "tags": ["AI伺服器", "代工", "Switch"]}, {"code": "2376", "name": "技嘉", "groups": ["AI伺服器", "電腦顯卡"], "description": "AI伺服器與電競板卡", "tags": ["AI伺服器", "顯卡", "主機板"]}, {"code": "2357", "name": "華碩", "groups": ["AI伺服器", "電腦顯卡", "筆電", "華碩集團"], "description": "AI伺服器、電競產品與AI PC品牌", "tags": ["AI伺服器", "顯卡", "NB", "AI PC"]}, {"code": "2308", "name": "台達電", "groups": ["AI伺服器", "散熱液冷", "電源供應器", "任天堂", "特斯拉", "低軌衛星"], "description": "全球電源龍頭，掌握AI伺服器與液冷供電方案，任天堂電源供應器", "tags": ["電源", "AI伺服器", "液冷", "Switch"]}, {"code": "2301", "name": "光寶科", "groups": ["AI伺服器", "電源供應器", "光寶集團"], "description": "AI伺服器電源與雲端運算中心供應商", "tags": ["電源", "AI伺服器", "雲端", "AI伺服器電源"]}, {"code": "3017", "name": "奇鋐", "groups": ["AI伺服器", "散熱液冷"], "description": "AI冷板與3D VC龍頭，具備垂直整合能力", "tags": ["散熱", "液冷", "冷板", "AI伺服器", "VC均熱板"]}, {"code": "3324", "name": "雙鴻", "groups": ["AI伺服器", "散熱液冷"], "description": "液冷散熱系統指標，供應高階伺服器", "tags": ["散熱", "液冷", "AI伺服器"]}, {"code": "8996", "name": "高力", "groups": ["散熱液冷"], "description": "歧管Manifold與板式換熱器核心", "tags": ["散熱", "液冷", "歧管", "換熱器"]}, {"code": "6125", "name": "廣運", "groups": ["散熱液冷"], "description": "液冷監控系統與CDU方案", "tags": ["散熱", "液冷", "CDU"]}, {"code": "2354", "name": "鴻準", "groups": ["散熱液冷", "機殼滑軌", "任天堂", "鴻海集團"], "description": "打入液冷模組供應鏈，機殼結合液冷散熱模組與分歧管，任天堂金屬外殼", "tags": ["散熱", "液冷", "機殼", "Switch", "AI伺服器"]}, {"code": "2421", "name": "建準", "groups": ["散熱液冷"], "description": "高規格AI伺服器風扇龍頭", "tags": ["散熱", "風扇", "AI伺服器"]}, {"code": "2486", "name": "一銓", "groups": ["散熱液冷", "導線架均熱片"], "description": "2026關鍵技術：高階晶片均熱片，AI晶片（如Blackwell）功耗極大需散熱", "tags": ["散熱", "均熱片", "AI晶片", "Blackwell", "導線架"]}, {"code": "2059", "name": "川湖", "groups": ["機殼滑軌"], "description": "全球伺服器滑軌龍頭，AI伺服器規格制定者", "tags": ["滑軌", "機殼", "AI伺服器", "伺服器機架"]}, {"code": "1959", "name": "南俊國際", "groups": ["機殼滑軌"], "description": "伺服器滑軌二哥，積極切入美系雲端大廠", "tags": ["滑軌", "伺服器", "雲端"]}, {"code": "8210", "name": "勤誠", "groups": ["機殼滑軌"], "description": "AI伺服器機殼龍頭", "tags": ["機殼", "AI伺服器"]}, {"code": "3013", "name": "晟銘電", "groups": ["機殼滑軌"], "description": "切入液冷機殼與L6/L10組裝", "tags": ["機殼", "液冷"]}, {"code": "6781", "name": "AES-KY", "groups": ["BBU電池"], "description": "新普旗下，高階資料中心BBU龍頭，高毛利指標", "tags": ["BBU", "電池", "資料中心", "鋰電池"]}, {"code": "6121", "name": "新普", "groups": ["BBU電池"], "description": "筆電電池龍頭，轉型AI伺服器BBU有成", "tags": ["BBU", "電池", "NB電池", "AI伺服器"]}, {"code": "3211", "name": "順達", "groups": ["BBU電池"], "description": "伺服器BBU與非IT應用轉型指標", "tags": ["BBU", "電池", "伺服器"]}, {"code": "6862", "name": "三集瑞-KY", "groups": ["被動元件"], "description": "2026機器人與AI電感龍頭，毛利之王", "tags": ["電感", "被動元件", "機器人", "AI伺服器", "TLVR"]}, {"code": "2327", "name": "國巨", "groups": ["被動元件", "國巨集團"], "description": "全球被動元件龍頭，掌握車用與高階工控利基", "tags": ["被動元件", "MLCC", "電阻", "車用"]}, {"code": "2492", "name": "華新科", "groups": ["被動元件", "華新麗華集團"], "description": "被動元件", "tags": ["被動元件", "MLCC", "電阻", "記憶體漲價", "被動元件漲價", "PCB缺料"]}, {"code": "6449", "name": "鈺邦", "groups": ["被動元件"], "description": "固態電容龍頭，供應AI伺服器與主機板", "tags": ["電容", "固態電容", "AI伺服器"]}, {"code": "6197", "name": "佳必琪", "groups": ["連接器"], "description": "NVIDIA認證供應商，AI伺服器高速連接線", "tags": ["連接器", "NVIDIA", "AI伺服器", "高速傳輸"]}, {"code": "8147", "name": "正淩", "groups": ["連接器"], "description": "高階光通訊連接器，醫療與AI伺服器", "tags": ["連接器", "光通訊", "醫療", "AI伺服器"]}, {"code": "3689", "name": "湧德", "groups": ["連接器"], "description": "高速傳輸接口，液冷散熱連接方案", "tags": ["連接器", "高速傳輸", "液冷"]}, {"code": "3526", "name": "凡甲", "groups": ["連接器"], "description": "伺服器與電動車連接器", "tags": ["連接器", "伺服器", "電動車"]}, {"code": "2351", "name": "順德", "groups": ["導線架均熱片"], "description": "全球功率導線架龍頭，深度綁定意法半導體與特斯拉", "tags": ["導線架", "功率元件", "特斯拉"]}, {"code": "6548", "name": "長科", "groups": ["導線架均熱片"], "description": "QFN導線架龍頭，先進封裝材料", "tags": ["導線架", "QFN", "先進封裝"]}, {"code": "2345", "name": "智邦", "groups": ["網通"], "description": "800G/1.6T交換器龍頭", "tags": ["網通", "交換器", "800G", "1.6T", "AI"]}, {"code": "6285", "name": "啟碁", "groups": ["網通", "低軌衛星"], "description": "車用與家用無線模組，網通權值指標，衛星通訊設備", "tags": ["網通", "Wi-Fi", "低軌衛星", "無線模組"]}, {"code": "5388", "name": "中磊", "groups": ["網通"], "description": "網通設備", "tags": ["網通", "Wi-Fi", "路由器"]}, {"code": "3596", "name": "智易", "groups": ["網通", "金仁寶集團"], "description": "智慧工廠與自動化網通設備", "tags": ["網通", "Wi-Fi", "AI供應鏈", "PCB缺料"]}, {"code": "4909", "name": "新復興", "groups": ["低軌衛星"], "description": "高頻微波板龍頭，2026衛星通訊板需求翻倍", "tags": ["低軌衛星", "微波板", "高頻", "衛星"]}, {"code": "3491", "name": "昇達科", "groups": ["低軌衛星"], "description": "低軌衛星微波元件龍頭，獲利成長最強勁", "tags": ["低軌衛星", "微波元件", "衛星"]}, {"code": "3138", "name": "耀登", "groups": ["低軌衛星"], "description": "天線模組與檢測，跨足低軌衛星天線", "tags": ["低軌衛星", "天線", "衛星"]}, {"code": "2313", "name": "華通", "groups": ["低軌衛星"], "description": "衛星用HDI板龍頭，2026全球市佔超過50%", "tags": ["低軌衛星", "HDI板", "PCB", "衛星"]}, {"code": "6271", "name": "同欣電", "groups": ["低軌衛星", "IC半導體"], "description": "陶瓷電路板與影像感測", "tags": ["低軌衛星", "陶瓷電路板", "感測器"]}, {"code": "2412", "name": "中華電", "groups": ["電信三雄"], "description": "配息5.2元10年新高，衛星通訊元年，推出海地星空計畫，資安營收首度破百億", "tags": ["電信", "衛星", "資安", "配息"]}, {"code": "3045", "name": "台灣大", "groups": ["電信三雄", "富邦集團"], "description": "配息4.8元，AIDC算力工廠，與NVIDIA深度合作建置Blackwell GB300算力中心", "tags": ["電信", "AIDC", "算力", "NVIDIA", "Blackwell"]}, {"code": "4904", "name": "遠傳", "groups": ["電信三雄", "遠東集團"], "description": "配息3.81元歷年最高，智慧醫療，AI賦能最快，遠距醫療輸出國際", "tags": ["電信", "醫療", "AI", "智慧城市"]}, {"code": "3714", "name": "富采", "groups": ["Micro LED", "元宇宙"], "description": "台灣LED龍頭，2026 Micro LED產能規模化指標", "tags": ["LED", "Micro LED", "元宇宙"]}, {"code": "6854", "name": "錼創科技-KY", "groups": ["Micro LED", "元宇宙", "AR眼鏡", "錸德集團"], "description": "Micro LED巨量轉移技術核心，Micro LED關鍵技術透明眼鏡顯示", "tags": ["Micro LED", "巨量轉移", "AR眼鏡", "元宇宙"]}, {"code": "2393", "name": "億光", "groups": ["Micro LED"], "description": "不可見光與車用LED穩定獲利王", "tags": ["LED", "車用LED", "不可見光"]}, {"code": "3008", "name": "大立光", "groups": ["光學鏡頭", "元宇宙", "機器人"], "description": "鏡頭球王，2026獨家供應可變光圈鏡頭，潛望鏡技術領先，積極布局機器人視覺", "tags": ["光學", "鏡頭", "蘋果", "潛望鏡", "可變光圈", "VR"]}, {"code": "3406", "name": "玉晶光", "groups": ["光學鏡頭", "元宇宙", "AR眼鏡"], "description": "蘋果第二大供應商，攻入VR/AR與潛望鏡補位，AR/VR鏡頭與Pancake模組", "tags": ["光學", "鏡頭", "蘋果", "AR", "VR", "Pancake"]}, {"code": "3362", "name": "先進光", "groups": ["光學鏡頭"], "description": "NB鏡頭龍頭，成功滲透蘋果iPad與Mac供應鏈", "tags": ["光學", "鏡頭", "NB", "蘋果"]}, {"code": "3019", "name": "亞光", "groups": ["光學鏡頭", "亞光集團"], "description": "車載鏡頭與光學雷達LiDAR，切入機器人測距，集團核心", "tags": ["光學", "鏡頭", "車用", "LiDAR", "機器人"]}, {"code": "4974", "name": "亞泰", "groups": ["光學鏡頭", "亞光集團"], "description": "亞光旗下，全球CIS影像感測模組二哥，連動掃地機器人與多功能事務機", "tags": ["光學", "CIS", "感測器", "機器人"]}, {"code": "2498", "name": "宏達電", "groups": ["元宇宙", "AR眼鏡", "威盛集團"], "description": "VR設備龍頭，VIVE平台", "tags": ["VR", "元宇宙", "AR", "VIVE", "AI眼鏡", "AR眼鏡"]}, {"code": "2388", "name": "威盛", "groups": ["元宇宙", "威盛集團"], "description": "元宇宙概念", "tags": ["元宇宙", "IC設計", "AI眼鏡", "AR眼鏡"]}, {"code": "3504", "name": "揚明光", "groups": ["元宇宙", "光學鏡頭", "AR眼鏡"], "description": "微投影與光學組件，光學引擎與投影技術，微投影光學引擎", "tags": ["光學", "微投影", "AR", "VR", "元宇宙"]}, {"code": "6789", "name": "采鈺", "groups": ["元宇宙", "AR眼鏡"], "description": "台積電旗下，感測器與微透鏡", "tags": ["感測器", "微透鏡", "AR", "VR"]}, {"code": "6143", "name": "振曜", "groups": ["電子紙"], "description": "電子書閱讀器與ESL模組組裝", "tags": ["電子紙", "電子書", "ESL"]}, {"code": "3141", "name": "晶宏", "groups": ["電子紙"], "description": "電子紙驅動IC，與元太高度連動", "tags": ["電子紙", "驅動IC"]}, {"code": "2395", "name": "研華", "groups": ["工業電腦"], "description": "全球IPC龍頭，2026邊緣AI軟硬整合標竿", "tags": ["工業電腦", "IPC", "邊緣運算", "AI"]}, {"code": "6414", "name": "樺漢", "groups": ["工業電腦", "鴻海集團"], "description": "鴻海集團，全球系統整合龍頭，掌握大型基礎設施標案", "tags": ["工業電腦", "系統整合", "鴻海", "AI伺服器"]}, {"code": "6922", "name": "宸曜", "groups": ["工業電腦", "機器人"], "description": "強固型邊緣AI推論平台，機器人視覺核心", "tags": ["工業電腦", "邊緣運算", "AI推論", "機器人視覺"]}, {"code": "1519", "name": "華城", "groups": ["重電電網"], "description": "重電五虎之一，變壓器龍頭", "tags": ["重電", "電網", "變壓器", "AIDC"]}, {"code": "1503", "name": "士電", "groups": ["重電電網", "士林三寶"], "description": "重電五虎之一，重電標竿，士林萬坪土地開發雙標題題材", "tags": ["重電", "電網", "變壓器", "士林", "土地"]}, {"code": "1513", "name": "中興電", "groups": ["重電電網"], "description": "重電五虎之一", "tags": ["重電", "電網", "變壓器"]}, {"code": "1514", "name": "亞力", "groups": ["重電電網"], "description": "重電五虎之一", "tags": ["重電", "電網"]}, {"code": "2371", "name": "大同", "groups": ["重電電網", "電線電纜"], "description": "智慧電表、電力變壓器、電纜", "tags": ["重電", "電網", "電纜", "電表"]}, {"code": "1618", "name": "合機", "groups": ["電線電纜"], "description": "2026標案金額第一，超高壓技術霸主（345kV）", "tags": ["電纜", "電線", "超高壓", "345kV"]}, {"code": "1612", "name": "宏泰", "groups": ["電線電纜"], "description": "打入矽谷AI資料中心供應鏈，訂單量大", "tags": ["電纜", "電線", "AI資料中心", "矽谷"]}, {"code": "1609", "name": "大亞", "groups": ["電線電纜"], "description": "電纜與儲能雙引擎，擁有大型儲能案場", "tags": ["電纜", "電線", "儲能"]}, {"code": "3576", "name": "聯合再生", "groups": ["太陽能"], "description": "太陽能龍頭指標", "tags": ["太陽能", "綠能"]}, {"code": "6244", "name": "茂迪", "groups": ["太陽能"], "description": "TOPCon技術領先，2026毛利突出", "tags": ["太陽能", "TOPCon", "綠能"]}, {"code": "9958", "name": "世紀鋼", "groups": ["綠色能源"], "description": "離岸風電水下基礎", "tags": ["風電", "離岸風電", "綠能"]}, {"code": "6806", "name": "森崴能源", "groups": ["綠色能源", "太陽能"], "description": "能源服務與海外布局", "tags": ["風電", "太陽能", "綠能", "儲能"]}, {"code": "8936", "name": "國統", "groups": ["水資源"], "description": "大口徑輸水管材龍頭，2026台灣大型海淡廠標案主要受惠者", "tags": ["水資源", "管材", "海水淡化"]}, {"code": "1535", "name": "中宇", "groups": ["水資源"], "description": "中鋼集團，水處理工程與環保設備維護", "tags": ["水資源", "水處理", "環保"]}, {"code": "9933", "name": "中鼎", "groups": ["水資源"], "description": "全球工程統包龍頭，大型淡化廠與綠色工程指標", "tags": ["水資源", "工程", "海水淡化", "綠色工程"]}, {"code": "1590", "name": "亞德客-KY", "groups": ["工具機"], "description": "亞洲氣動元件龍頭，只要自動化產線動它一定先動", "tags": ["工具機", "氣動", "自動化"]}, {"code": "2049", "name": "上銀", "groups": ["工具機", "機器人"], "description": "精密線性傳動與機器人雙棲龍頭", "tags": ["工具機", "機器人", "線性傳動", "精密"]}, {"code": "4585", "name": "達明", "groups": ["機器人", "工業電腦", "光學鏡頭"], "description": "全球第二大協作機器人廠，2026人形機器人指標", "tags": ["機器人", "協作機器人", "人形機器人", "AI視覺", "光學"]}, {"code": "2359", "name": "所羅門", "groups": ["機器人", "光學鏡頭"], "description": "AI視覺軟體龍頭，機器人大腦", "tags": ["機器人", "AI視覺", "軟體"]}, {"code": "4571", "name": "鈞興-KY", "groups": ["機器人"], "description": "機器人關節諧波減速器龍頭，2026智能傳動增長最快", "tags": ["機器人", "減速器", "諧波減速", "關節"]}, {"code": "4583", "name": "台灣精銳", "groups": ["機器人", "工具機"], "description": "精密行星減速機大廠，打入全球工業機器人體系", "tags": ["機器人", "減速機", "工具機"]}, {"code": "2027", "name": "大成鋼", "groups": ["金屬鋼鐵"], "description": "北美不鏽鋼/鋁捲板通路龍頭，德州廠自製率提升", "tags": ["鋼鐵", "不鏽鋼", "北美", "關稅"]}, {"code": "2002", "name": "中鋼", "groups": ["金屬鋼鐵"], "description": "集團旗下電磁鋼片供應AI伺服器馬達", "tags": ["鋼鐵", "電磁鋼片", "AI伺服器", "馬達"]}, {"code": "1584", "name": "精剛", "groups": ["金屬鋼鐵", "軍工無人機"], "description": "鈦合金與鎳基合金，供應飛彈與航太引擎", "tags": ["鋼鐵", "鈦合金", "軍工", "航太"]}, {"code": "8390", "name": "金益鼎", "groups": ["黃金避險"], "description": "黃金回收與貴金屬加工", "tags": ["黃金", "避險", "貴金屬回收"]}, {"code": "1301", "name": "台塑", "groups": ["塑化", "台塑集團"], "description": "台塑四寶之一", "tags": ["台塑四寶", "塑化", "塑膠", "PCB電子材料", "ABF", "漲價"]}, {"code": "1326", "name": "台化", "groups": ["塑化", "台塑集團"], "description": "台塑四寶之一", "tags": ["台塑四寶", "塑化", "PCB電子材料", "ABF", "漲價"]}, {"code": "6505", "name": "台塑化", "groups": ["塑化", "台塑集團", "黃金避險"], "description": "台塑四寶之一，台灣唯一民營煉油廠，油價大漲直接受惠", "tags": ["台塑四寶", "塑化", "煉油", "油價", "PCB電子材料", "ABF", "漲價"]}, {"code": "2634", "name": "漢翔", "groups": ["軍工無人機", "低軌衛星"], "description": "航空製造，波音訂單，航太級機殼", "tags": ["軍工", "航空", "航太", "波音"]}, {"code": "8033", "name": "雷虎", "groups": ["軍工無人機"], "description": "無人機研發指標", "tags": ["軍工", "無人機"]}, {"code": "2603", "name": "長榮", "groups": ["海運航運"], "description": "貨櫃航運龍頭", "tags": ["海運", "貨櫃", "航運"]}, {"code": "2609", "name": "陽明", "groups": ["海運航運"], "description": "貨櫃航運", "tags": ["海運", "貨櫃", "航運"]}, {"code": "2615", "name": "萬海", "groups": ["海運航運"], "description": "貨櫃航運", "tags": ["海運", "貨櫃", "航運"]}, {"code": "2637", "name": "慧洋-KY", "groups": ["海運航運"], "description": "巴拿馬型與輕便型散裝航運", "tags": ["海運", "散裝", "BDI", "航運"]}, {"code": "2606", "name": "裕民", "groups": ["海運航運", "遠東集團"], "description": "海峽型散裝航運", "tags": ["海運", "散裝", "BCI", "航運"]}, {"code": "2618", "name": "長榮航", "groups": ["航空"], "description": "客運與AI零件貨運雙旺", "tags": ["航空", "客運", "貨運"]}, {"code": "2610", "name": "華航", "groups": ["航空"], "description": "客運與貨運", "tags": ["航空", "客運", "貨運"]}, {"code": "6757", "name": "台灣虎航", "groups": ["航空"], "description": "廉航龍頭，2026獲利爆發指標", "tags": ["航空", "廉航"]}, {"code": "2646", "name": "星宇航空", "groups": ["航空"], "description": "精品航空，2026航線拓展與轉上市題材", "tags": ["航空", "精品"]}, {"code": "9921", "name": "巨大", "groups": ["自行車"], "description": "捷安特，全球成車龍頭", "tags": ["自行車", "腳踏車", "E-bike"]}, {"code": "9914", "name": "美利達", "groups": ["自行車"], "description": "專攻高階與E-bike市場", "tags": ["自行車", "腳踏車", "E-bike"]}, {"code": "2731", "name": "雄獅", "groups": ["觀光旅遊"], "description": "核心旅行社，出境旅遊", "tags": ["觀光", "旅遊", "旅行社"]}, {"code": "2707", "name": "晶華", "groups": ["觀光旅遊"], "description": "高級飯店品牌", "tags": ["觀光", "飯店", "旅遊"]}, {"code": "1232", "name": "大統益", "groups": ["食品餐飲", "統一集團"], "description": "沙拉油龍頭，穩定配息之王", "tags": ["食品", "沙拉油", "配息"]}, {"code": "2727", "name": "王品", "groups": ["食品餐飲"], "description": "高端與多品牌餐飲經營，2026海外展店加速", "tags": ["食品", "餐飲", "連鎖"]}, {"code": "3293", "name": "鈊象", "groups": ["遊戲", "任天堂", "低軌衛星"], "description": "台灣遊戲股王，海外博弈授權商機，遊戲內容與授權", "tags": ["遊戲", "博弈", "授權", "Switch"]}, {"code": "5478", "name": "智冠", "groups": ["遊戲", "行動支付"], "description": "MyCard點數通路龍頭", "tags": ["遊戲", "點數", "支付"]}, {"code": "6763", "name": "綠界科技", "groups": ["行動支付", "電商物流"], "description": "第三方支付龍頭，2026受惠電商成交量爆發", "tags": ["支付", "電商", "第三方支付"]}, {"code": "8454", "name": "富邦媒", "groups": ["電商物流", "富邦集團"], "description": "momo電商龍頭", "tags": ["電商", "momo", "物流"]}, {"code": "2885", "name": "元大金", "groups": ["金融"], "description": "證券市佔龍頭，台股風向球", "tags": ["金融", "證券", "銀行"]}, {"code": "2891", "name": "中信金", "groups": ["金融"], "description": "銀行與金控指標", "tags": ["金融", "銀行", "金控"]}, {"code": "2881", "name": "富邦金", "groups": ["金融", "富邦集團"], "description": "壽險與保險指標，擁有大量美金資產", "tags": ["金融", "壽險", "保險", "富邦"]}, {"code": "2882", "name": "國泰金", "groups": ["金融", "國泰霖園集團"], "description": "壽險與保險指標", "tags": ["金融", "壽險", "保險"]}, {"code": "6472", "name": "保瑞", "groups": ["生技醫療"], "description": "擁有美加藥廠，可直接在地供應避開關稅，CDMO", "tags": ["生技", "醫療", "藥廠", "CDMO", "關稅"]}, {"code": "6446", "name": "藥華藥", "groups": ["生技醫療"], "description": "血癌藥全球放量指標", "tags": ["生技", "新藥", "血癌"]}, {"code": "4129", "name": "聯合", "groups": ["生技醫療"], "description": "亞洲骨科器材龍頭，全球人工關節供應", "tags": ["生技", "醫療器材", "骨科"]}, {"code": "3376", "name": "新日興", "groups": ["軸承摺疊機"], "description": "蘋果長期樞紐夥伴，2026摺疊iPhone/iPad軸承核心開發商", "tags": ["軸承", "摺疊機", "蘋果", "iPhone"]}, {"code": "6805", "name": "富士達", "groups": ["軸承摺疊機"], "description": "摺疊機軸承龍頭，掌握陸系與美系大廠關鍵專利", "tags": ["軸承", "摺疊機", "折疊機"]}, {"code": "3548", "name": "兆利", "groups": ["軸承摺疊機"], "description": "陸系大廠主要供應商，2026產能擴張至東南亞與美系鏈", "tags": ["軸承", "摺疊機", "折疊機"]}, {"code": "6491", "name": "晶碩", "groups": ["隱形眼鏡"], "description": "代工與品牌雙棲，2026矽水膠產能放量", "tags": ["隱形眼鏡", "矽水膠"]}, {"code": "6782", "name": "視陽", "groups": ["隱形眼鏡"], "description": "全球矽水膠代工龍頭，專攻歐美高毛利市場", "tags": ["隱形眼鏡", "矽水膠"]}, {"code": "2374", "name": "佳能", "groups": ["能率集團", "和碩集團"], "description": "AI視覺模組，機器人的眼睛", "tags": ["AI視覺", "機器人", "影像模組"]}, {"code": "1504", "name": "東元", "groups": ["重電電網", "電線電纜", "東元集團"], "description": "機電工程、高效馬達，集團母公司，EV驅動系統", "tags": ["重電", "馬達", "電動車", "EV", "AI資料中心"]}, {"code": "2349", "name": "錸德", "groups": ["錸德集團"], "description": "集團母公司，轉型綠能與控股", "tags": ["綠能", "儲能", "錸德"]}, {"code": "8104", "name": "錸寶", "groups": ["錸德集團"], "description": "PMOLED龍頭，積極跨足Micro LED與儲能系統", "tags": ["PMOLED", "Micro LED", "儲能", "錸德"]}, {"code": "1536", "name": "和大", "groups": ["工具機", "汽車車用相關", "特斯拉"], "description": "美國新墨西哥州廠2026年進入營收貢獻高峰，直接供應特斯拉及美系車廠，減速齒輪", "tags": ["汽車", "特斯拉", "齒輪", "工具機", "北美"]}, {"code": "3665", "name": "貿聯-KY", "groups": ["特斯拉", "連接器"], "description": "特斯拉電源線束", "tags": ["特斯拉", "電動車", "線束", "連接器"]}, {"code": "5243", "name": "乙盛-KY", "groups": ["特斯拉", "汽車車用相關", "鴻海集團"], "description": "車體結構件", "tags": ["特斯拉", "電動車", "車體", "鴻海", "集團股", "AI伺服器"]}, {"code": "2324", "name": "仁寶", "groups": ["筆電", "金仁寶集團"], "description": "AI PC品牌與換機潮受惠者", "tags": ["NB", "筆電", "AI PC", "AI供應鏈", "PCB缺料"]}, {"code": "2353", "name": "宏碁", "groups": ["筆電"], "description": "AI PC品牌", "tags": ["NB", "筆電", "AI PC", "品牌"]}, {"code": "2362", "name": "藍天", "groups": ["筆電"], "description": "高階NB代工與中國百腦匯通路", "tags": ["NB", "筆電", "代工"]}, {"code": "3227", "name": "原相", "groups": ["任天堂", "聯電集團"], "description": "Joy-Con控制器光學感測技術", "tags": ["Switch", "任天堂", "光學感測", "控制器"]}, {"code": "2436", "name": "偉詮電", "groups": ["任天堂", "低軌衛星", "電源管理IC"], "description": "電源管理PMIC", "tags": ["Switch", "任天堂", "PMIC", "電源管理IC", "USB-PD", "低軌衛星"]}, {"code": "2417", "name": "圓剛", "groups": ["影像擷取"], "description": "個人直播與影像擷取龍頭，轉型AI邊緣運算平台", "tags": ["影像擷取", "直播", "AI邊緣運算"]}, {"code": "3669", "name": "圓展", "groups": ["影像擷取"], "description": "視訊會議與智慧教育，與圓剛具備強大族群連動性", "tags": ["影像擷取", "視訊", "教育"]}, {"code": "5474", "name": "聰泰", "groups": ["影像擷取"], "description": "品牌名YUAN，全球高階影像擷取卡指標", "tags": ["影像擷取", "高階", "YUAN"]}, {"code": "6679", "name": "鈺太", "groups": ["揚聲器"], "description": "MEMS麥克風龍頭，AI筆電與眼鏡語音控制核心", "tags": ["揚聲器", "麥克風", "MEMS", "AI語音"]}, {"code": "2439", "name": "美律", "groups": ["揚聲器"], "description": "電聲產品大廠，供應iPhone與高階耳機", "tags": ["揚聲器", "麥克風", "耳機", "蘋果"]}, {"code": "2348", "name": "海悅", "groups": ["營建"], "description": "代銷龍頭，掌握全台建案風向", "tags": ["營建", "代銷", "房地產"]}, {"code": "5522", "name": "遠雄", "groups": ["營建"], "description": "傳統權值建商", "tags": ["營建", "建商"]}, {"code": "1903", "name": "士紙", "groups": ["造紙碳權", "士林三寶"], "description": "萬坪舊廠土地開發，士林區大地主", "tags": ["造紙", "碳權", "士林", "土地開發"]}, {"code": "1907", "name": "永豐餘", "groups": ["造紙碳權", "永豐餘集團"], "description": "控股龍頭，碳權管理先驅", "tags": ["造紙", "碳權", "ESG", "碳足跡"]}, {"code": "1905", "name": "華紙", "groups": ["造紙碳權", "永豐餘集團"], "description": "擁有大量林地資產，碳權交易核心股", "tags": ["造紙", "碳權", "林地", "碳交易"]}, {"code": "1419", "name": "新紡", "groups": ["士林三寶", "新光集團"], "description": "士林區大筆土地持分，資產價值雄厚", "tags": ["士林", "土地", "紡織", "新光"]}, {"code": "2530", "name": "士開", "groups": ["士林三寶"], "description": "士林開發，區域建案與房地產開發直接受惠", "tags": ["士林", "建設", "土地開發", "NVIDIA"]}, {"code": "1316", "name": "上曜", "groups": ["上曜集團", "營建"], "description": "集團母公司，台南高階豪宅建商", "tags": ["營建", "豪宅", "台南", "上曜"]}, {"code": "3454", "name": "晶睿", "groups": ["安全監控"], "description": "安全監控設備", "tags": ["安全監控", "監控", "影像"]}, {"code": "3356", "name": "奇偶", "groups": ["安全監控"], "description": "安全監控設備", "tags": ["安全監控", "監控"]}, {"code": "1476", "name": "儒鴻", "groups": ["鞋子成衣"], "description": "針織布與成衣龍頭，提供高階運動球衣材料", "tags": ["成衣", "紡織", "運動服", "世足"]}, {"code": "1477", "name": "聚陽", "groups": ["鞋子成衣"], "description": "運動休閒服飾代工，2026訂單能見度極高", "tags": ["成衣", "運動服", "世足"]}, {"code": "9904", "name": "寶成", "groups": ["鞋子成衣"], "description": "全球最大運動鞋代工，世足賽期間營收跳增", "tags": ["鞋子", "運動鞋", "代工", "世足"]}, {"code": "6768", "name": "志強-KY", "groups": ["鞋子成衣"], "description": "全球足球鞋代工龍頭，Nike/Adidas足球鞋6成由其生產", "tags": ["鞋子", "足球鞋", "Nike", "Adidas", "世足"]}, {"code": "6670", "name": "復盛應用", "groups": ["高爾夫"], "description": "全球高爾夫球桿頭代工龍頭，技術門檻最高", "tags": ["高爾夫", "球桿頭", "代工"]}, {"code": "8938", "name": "明安", "groups": ["高爾夫"], "description": "球桿頭與複合材料，掌握高階碳纖維技術", "tags": ["高爾夫", "球桿頭", "碳纖維"]}, {"code": "4736", "name": "泰博", "groups": ["防疫口罩", "生技醫療"], "description": "額溫槍與快篩試劑主力，多合一病毒快篩", "tags": ["防疫", "快篩", "額溫槍", "口罩", "試劑"]}, {"code": "4142", "name": "國光生", "groups": ["生技醫療", "防疫口罩"], "description": "疫苗開發", "tags": ["生技", "疫苗", "防疫"]}, {"code": "2640", "name": "台灣大車隊", "groups": ["叫車租車"], "description": "55688龍頭叫車服務", "tags": ["叫車", "計程車", "租車"]}, {"code": "5871", "name": "中租-KY", "groups": ["叫車租車"], "description": "租賃龍頭，跨國布局", "tags": ["租賃", "融資", "中租"]}, {"code": "4162", "name": "智擎", "groups": ["生技醫療"], "description": "特色新藥", "tags": ["生技", "新藥", "醫療"]}, {"code": "6919", "name": "康霈", "groups": ["生技醫療"], "description": "局部減脂醫美新藥，2026全球市場熱點", "tags": ["生技", "醫美", "新藥"]}, {"code": "2464", "name": "盟立", "groups": ["機器人", "工具機"], "description": "系統整合與精密組件", "tags": ["機器人", "系統整合", "自動化"]}, {"code": "6188", "name": "廣明", "groups": ["機器人"], "description": "自動化與儲存佈局，達明母公司", "tags": ["機器人", "自動化", "協作機器人"]}, {"code": "8374", "name": "羅昇", "groups": ["機器人"], "description": "機器人代理與AI周邊", "tags": ["機器人", "代理", "自動化"]}, {"code": "3708", "name": "上緯投控", "groups": ["綠色能源"], "description": "風電葉片材料", "tags": ["風電", "離岸風電", "綠能", "葉片材料"]}, {"code": "6873", "name": "泓德能源", "groups": ["綠色能源", "太陽能", "重電電網"], "description": "能源服務整合", "tags": ["綠能", "太陽能", "風電", "儲能"]}, {"code": "6812", "name": "梭特", "groups": ["Micro LED"], "description": "Micro LED點測與分選設備龍頭", "tags": ["LED", "Micro LED", "測試", "分選設備"]}, {"code": "3645", "name": "達邁", "groups": ["AR眼鏡", "國碩集團"], "description": "PI膜，折疊與高階電路板材料", "tags": ["AR眼鏡", "PI膜", "折疊手機", "材料", "AI眼鏡"]}, {"code": "6558", "name": "興能高", "groups": ["AR眼鏡", "BBU電池"], "description": "微型電池，穿戴裝置", "tags": ["電池", "微型電池", "穿戴", "AR眼鏡"]}, {"code": "2406", "name": "國碩", "groups": ["太陽能", "國碩集團"], "description": "材料供應，太陽能", "tags": ["太陽能", "材料", "AI眼鏡"]}, {"code": "3691", "name": "碩禾", "groups": ["太陽能", "國碩集團"], "description": "漿料技術", "tags": ["太陽能", "漿料", "AI眼鏡"]}, {"code": "6443", "name": "元晶", "groups": ["太陽能", "低軌衛星"], "description": "高效能太陽能模組", "tags": ["太陽能", "模組", "低軌衛星"]}, {"code": "3050", "name": "鈺德", "groups": ["錸德集團"], "description": "預錄媒體轉型文創與綠能", "tags": ["錸德", "綠能", "文創"]}, {"code": "2250", "name": "IKKA-KY", "groups": ["能率集團", "機器人"], "description": "機器人減速機與齒輪零件，機器人的關節", "tags": ["機器人", "減速機", "齒輪", "關節"]}, {"code": "8249", "name": "菱光", "groups": ["東元集團"], "description": "集團樞紐，影像感測模組", "tags": ["影像感測", "東元", "AI資料中心"]}, {"code": "5438", "name": "東友", "groups": ["東元集團"], "description": "多功能事務機與3D列印", "tags": ["事務機", "3D列印", "東元", "AI資料中心"]}, {"code": "5484", "name": "慧友", "groups": ["機器人", "安全監控"], "description": "邊緣運算視覺整合", "tags": ["機器人", "AI視覺", "邊緣運算", "監控"]}, {"code": "1434", "name": "福懋", "groups": ["台塑集團", "塑化"], "description": "台塑集團，化纖與特殊面料", "tags": ["台塑", "塑化", "化纖", "集團股", "PCB電子材料", "ABF", "漲價"]}, {"code": "3374", "name": "精材", "groups": ["台積電集團"], "description": "台積電轉投資，晶圓級封裝材料", "tags": ["台積電", "封裝材料", "集團股", "AI先進製程", "CoWoS"]}, {"code": "2597", "name": "潤弘", "groups": ["潤泰集團"], "description": "潤泰集團，預拌混凝土與建材", "tags": ["潤泰", "建材", "集團股"]}, {"code": "2915", "name": "潤泰全", "groups": ["潤泰集團", "統一集團"], "description": "零售通路與建設", "tags": ["潤泰", "零售", "集團股"]}, {"code": "5227", "name": "立凱-KY", "groups": ["潤泰集團"], "description": "磷酸鋰鐵電池正極材料", "tags": ["潤泰", "電池", "鋰鐵", "集團股"]}, {"code": "1808", "name": "潤泰材", "groups": ["潤泰集團"], "description": "建材與土木工程材料", "tags": ["潤泰", "建材", "集團股"]}, {"code": "9945", "name": "潤泰新", "groups": ["潤泰集團"], "description": "潤泰集團，建設與零售", "tags": ["潤泰", "建設", "集團股"]}, {"code": "3479", "name": "安勤", "groups": ["金仁寶集團", "工業電腦"], "description": "工業電腦，支付系統與零售POS", "tags": ["金仁寶", "工業電腦", "POS", "集團股", "AI供應鏈", "PCB缺料"]}, {"code": "6282", "name": "康舒", "groups": ["金仁寶集團", "低軌衛星", "電源供應器"], "description": "電源供應器，承接大量星鏈訂單", "tags": ["金仁寶", "電源", "低軌衛星", "Starlink", "集團股", "AI供應鏈", "PCB缺料"]}, {"code": "8155", "name": "博智", "groups": ["金仁寶集團", "PCB載板"], "description": "高階PCB與AI伺服器板", "tags": ["金仁寶", "PCB", "AI伺服器", "集團股", "AI供應鏈", "PCB缺料"]}, {"code": "9105", "name": "泰金寶-DR", "groups": ["金仁寶集團"], "description": "金仁寶集團DR存託憑證", "tags": ["金仁寶", "集團股", "AI供應鏈", "PCB缺料"]}, {"code": "2312", "name": "金寶", "groups": ["金仁寶集團", "低軌衛星"], "description": "電源供應器與組裝，承接星鏈訂單", "tags": ["金仁寶", "電源", "低軌衛星", "集團股", "AI供應鏈", "PCB缺料"]}, {"code": "8083", "name": "鋐寶", "groups": ["金仁寶集團"], "description": "金仁寶集團成員", "tags": ["金仁寶", "集團股", "AI供應鏈", "PCB缺料"]}, {"code": "2352", "name": "佳世達", "groups": ["友達集團", "和碩集團", "任天堂", "低軌衛星"], "description": "控制模組與周邊代工", "tags": ["友達", "佳世達", "集團股", "任天堂", "Switch", "周邊", "代工"]}, {"code": "8049", "name": "建興材料", "groups": ["友達集團"], "description": "光學膜材料", "tags": ["友達", "光學膜", "集團股"]}, {"code": "6120", "name": "達運", "groups": ["友達集團"], "description": "光學膜與背光模組", "tags": ["友達", "光學膜", "背光", "集團股"]}, {"code": "8163", "name": "達方", "groups": ["友達集團", "自行車"], "description": "轉型E-bike與電池組件", "tags": ["友達", "E-bike", "電池", "集團股"]}, {"code": "8215", "name": "明基材", "groups": ["友達集團"], "description": "光學材料", "tags": ["友達", "光學材料", "集團股"]}, {"code": "2501", "name": "國泰建設", "groups": ["國泰霖園集團", "營建"], "description": "國泰集團，建設開發", "tags": ["國泰", "建設", "營建", "集團股"]}, {"code": "2850", "name": "新產", "groups": ["新光集團", "金融"], "description": "新光集團，產物保險", "tags": ["新光", "保險", "金融", "集團股"]}, {"code": "4933", "name": "友輝", "groups": ["新光集團"], "description": "新光集團，光學膜", "tags": ["新光", "光學膜", "集團股"]}, {"code": "9908", "name": "大台北", "groups": ["新光集團"], "description": "新光集團，瓦斯事業", "tags": ["新光", "瓦斯", "集團股"]}, {"code": "9925", "name": "新保", "groups": ["新光集團"], "description": "新光集團，保全服務", "tags": ["新光", "保全", "集團股"]}, {"code": "9926", "name": "新海", "groups": ["新光集團"], "description": "新光集團，天然氣", "tags": ["新光", "天然氣", "集團股"]}, {"code": "1605", "name": "華新", "groups": ["華新麗華集團", "電線電纜"], "description": "華新麗華集團，電纜與特殊鋼", "tags": ["華新", "電纜", "集團股", "記憶體漲價", "被動元件漲價", "PCB缺料"]}, {"code": "5469", "name": "瀚宇博", "groups": ["華新麗華集團", "PCB載板"], "description": "PCB電路板", "tags": ["華新", "PCB", "集團股", "記憶體漲價", "被動元件漲價", "PCB缺料"]}, {"code": "6116", "name": "彩晶", "groups": ["華新麗華集團", "扇形封裝"], "description": "面板驅動IC", "tags": ["華新", "面板", "驅動IC", "集團股", "記憶體漲價", "被動元件漲價", "PCB缺料"]}, {"code": "6173", "name": "信昌電", "groups": ["華新麗華集團", "被動元件"], "description": "被動元件MLCC", "tags": ["華新", "被動元件", "MLCC", "集團股", "記憶體漲價", "被動元件漲價", "PCB缺料"]}, {"code": "6191", "name": "精成科", "groups": ["華新麗華集團"], "description": "華新麗華集團成員", "tags": ["華新", "集團股", "記憶體漲價", "被動元件漲價", "PCB缺料"]}, {"code": "8183", "name": "精星", "groups": ["華新麗華集團"], "description": "華新麗華集團成員", "tags": ["華新", "集團股", "記憶體漲價", "被動元件漲價", "PCB缺料"]}, {"code": "3311", "name": "閎暉", "groups": ["華新麗華集團", "光寶集團"], "description": "兩集團交叉持股，電子元件", "tags": ["華新", "光寶", "集團股", "AI伺服器電源"]}, {"code": "1259", "name": "安心", "groups": ["東元集團"], "description": "東元集團，冷凍食品", "tags": ["東元", "食品", "集團股", "AI資料中心"]}, {"code": "2321", "name": "東訊", "groups": ["東元集團"], "description": "東元集團，通訊設備", "tags": ["東元", "通訊", "集團股", "AI資料中心"]}, {"code": "2467", "name": "聯昌", "groups": ["東元集團", "PCB載板"], "description": "電源轉接器與車用充電", "tags": ["東元", "電源", "車用充電", "集團股", "AI資料中心", "PCB", "烘烤", "檢測", "PCB設備"]}, {"code": "2643", "name": "宅配通", "groups": ["東元集團", "電商物流"], "description": "物流快遞，東元集團", "tags": ["東元", "宅配", "物流", "集團股", "AI資料中心"]}, {"code": "3593", "name": "力銘", "groups": ["光寶集團"], "description": "光寶集團成員", "tags": ["光寶", "集團股", "AI伺服器電源"]}, {"code": "1216", "name": "統一", "groups": ["統一集團", "食品餐飲"], "description": "食品飲料龍頭", "tags": ["統一", "食品", "飲料", "集團股"]}, {"code": "1789", "name": "神隆", "groups": ["統一集團", "生技醫療"], "description": "原料藥製造", "tags": ["統一", "原料藥", "生技", "集團股"]}, {"code": "2511", "name": "太子", "groups": ["統一集團", "營建"], "description": "建設開發，轉投資飯店觀光", "tags": ["統一", "建設", "觀光", "集團股"]}, {"code": "2855", "name": "統一證", "groups": ["統一集團", "金融"], "description": "統一集團，證券", "tags": ["統一", "證券", "金融", "集團股"]}, {"code": "5902", "name": "德記", "groups": ["統一集團"], "description": "統一集團，貿易", "tags": ["統一", "貿易", "集團股"]}, {"code": "9907", "name": "統一實", "groups": ["統一集團"], "description": "統一集團，實業", "tags": ["統一", "實業", "集團股"]}, {"code": "2912", "name": "統一超", "groups": ["統一集團"], "description": "7-Eleven，超商龍頭", "tags": ["統一", "超商", "7-11", "集團股"]}, {"code": "2434", "name": "統懋", "groups": ["統一集團"], "description": "統一集團，化合物半導體封測", "tags": ["統一", "半導體", "砷化鎵", "集團股"]}, {"code": "9919", "name": "康那香", "groups": ["統一集團", "防疫口罩"], "description": "不織布、防護衣、民生物資", "tags": ["統一", "不織布", "集團股", "口罩", "防疫", "防護衣"]}, {"code": "3014", "name": "聯陽", "groups": ["聯電集團", "IC半導體"], "description": "聯電集團，IC設計", "tags": ["聯電", "IC設計", "集團股"]}, {"code": "6168", "name": "宏齊", "groups": ["聯電集團", "Micro LED"], "description": "IC封裝型LED，智慧座艙應用", "tags": ["聯電", "LED", "集團股"]}, {"code": "2201", "name": "裕隆", "groups": ["裕隆集團", "汽車車用相關"], "description": "整車製造OEM", "tags": ["裕隆", "汽車", "整車", "集團股"]}, {"code": "2204", "name": "中華", "groups": ["裕隆集團", "汽車車用相關"], "description": "整車製造OEM", "tags": ["裕隆", "汽車", "整車", "集團股"]}, {"code": "9941", "name": "裕融", "groups": ["裕隆集團", "叫車租車"], "description": "車貸無卡分期，旗下LINE GO", "tags": ["裕隆", "租賃", "車貸", "集團股"]}, {"code": "2227", "name": "裕日車", "groups": ["裕隆集團", "汽車車用相關"], "description": "日產裕隆合資，整車代理", "tags": ["裕隆", "汽車", "日產", "集團股"]}, {"code": "1417", "name": "嘉裕", "groups": ["裕隆集團"], "description": "裕隆集團，成衣", "tags": ["裕隆", "成衣", "集團股"]}, {"code": "1525", "name": "江申", "groups": ["裕隆集團"], "description": "裕隆集團，機車零件", "tags": ["裕隆", "機車", "集團股"]}, {"code": "1102", "name": "亞泥", "groups": ["遠東集團"], "description": "水泥，遠東集團", "tags": ["遠東", "水泥", "集團股"]}, {"code": "1402", "name": "遠東新", "groups": ["遠東集團", "鞋子成衣"], "description": "2026世足賽球衣布料供應商", "tags": ["遠東", "成衣", "紡織", "世足", "集團股"]}, {"code": "1460", "name": "宏遠", "groups": ["遠東集團"], "description": "遠東集團，紡織", "tags": ["遠東", "紡織", "集團股"]}, {"code": "1710", "name": "東聯", "groups": ["遠東集團"], "description": "遠東集團，石化", "tags": ["遠東", "石化", "集團股"]}, {"code": "2845", "name": "遠東銀", "groups": ["遠東集團", "金融"], "description": "遠東集團，銀行", "tags": ["遠東", "銀行", "金融", "集團股"]}, {"code": "2903", "name": "遠百", "groups": ["遠東集團"], "description": "遠東集團，百貨零售", "tags": ["遠東", "百貨", "零售", "集團股"]}, {"code": "5317", "name": "凱美", "groups": ["國巨集團", "被動元件"], "description": "國巨集團，MLCC電容", "tags": ["國巨", "被動元件", "MLCC", "集團股"]}, {"code": "4938", "name": "和碩", "groups": ["華碩集團", "和碩集團"], "description": "蘋果最大代工廠之一", "tags": ["華碩", "和碩", "代工", "集團股"]}, {"code": "2314", "name": "台揚", "groups": ["鴻海集團", "低軌衛星", "網通"], "description": "系統組裝與衛星通訊設備", "tags": ["鴻海", "低軌衛星", "網通", "集團股", "AI伺服器"]}, {"code": "2328", "name": "廣宇", "groups": ["鴻海集團"], "description": "鴻海集團，機構件", "tags": ["鴻海", "機構件", "集團股", "AI伺服器"]}, {"code": "3062", "name": "建漢", "groups": ["鴻海集團", "低軌衛星"], "description": "系統組裝與收發頭", "tags": ["鴻海", "低軌衛星", "收發頭", "集團股", "AI伺服器"]}, {"code": "3413", "name": "京鼎", "groups": ["鴻海集團", "台積設備"], "description": "鴻海集團，半導體設備", "tags": ["鴻海", "半導體設備", "集團股", "AI伺服器"]}, {"code": "3437", "name": "榮創", "groups": ["鴻海集團", "Micro LED"], "description": "特色LED與封裝", "tags": ["鴻海", "LED", "集團股", "AI伺服器"]}, {"code": "6456", "name": "GIS-KY", "groups": ["鴻海集團", "AR眼鏡"], "description": "貼合技術", "tags": ["鴻海", "貼合", "AR眼鏡", "集團股", "AI伺服器"]}, {"code": "8064", "name": "東捷", "groups": ["鴻海集團", "扇形封裝"], "description": "FOPLP AOI檢測與雷射修補設備", "tags": ["鴻海", "FOPLP", "AOI", "集團股", "AI伺服器"]}, {"code": "6668", "name": "中揚光", "groups": ["鴻海集團"], "description": "鴻海集團，光電", "tags": ["鴻海", "光電", "集團股", "AI伺服器"]}, {"code": "6416", "name": "瑞祺電通", "groups": ["鴻海集團", "網通"], "description": "網通設備", "tags": ["鴻海", "網通", "集團股", "AI伺服器"]}, {"code": "5344", "name": "立衛", "groups": ["威盛集團"], "description": "威盛集團成員", "tags": ["威盛", "集團股", "AI眼鏡", "AR眼鏡"]}, {"code": "6118", "name": "建達", "groups": ["威盛集團", "元宇宙"], "description": "威盛集團成員", "tags": ["威盛", "集團股", "AI眼鏡", "AR眼鏡", "元宇宙"]}, {"code": "2890", "name": "永豐金", "groups": ["永豐餘集團", "金融"], "description": "永豐餘集團，金控銀行", "tags": ["永豐餘", "銀行", "金融", "集團股"]}, {"code": "3515", "name": "華擎", "groups": ["和碩集團", "電腦顯卡"], "description": "主機板大廠，板卡三雄之一", "tags": ["和碩", "主機板", "電競", "集團股"]}, {"code": "3694", "name": "海華", "groups": ["和碩集團"], "description": "無線模組與影像模組大廠，2026營收成長最強", "tags": ["和碩", "無線模組", "影像", "集團股"]}, {"code": "5314", "name": "世紀", "groups": ["上曜集團"], "description": "2026併購與集團版圖整合指標", "tags": ["上曜", "集團股"]}, {"code": "4303", "name": "信立", "groups": ["上曜集團"], "description": "合成皮，轉型特殊材料", "tags": ["上曜", "合成皮", "集團股"]}, {"code": "4714", "name": "永捷", "groups": ["上曜集團"], "description": "PU樹脂，折疊手機材料與國防塗料", "tags": ["上曜", "PU樹脂", "折疊手機", "集團股"]}, {"code": "3313", "name": "斐成", "groups": ["上曜集團"], "description": "電子零件與建設轉型", "tags": ["上曜", "電子", "集團股"]}, {"code": "8420", "name": "明揚", "groups": ["高爾夫"], "description": "明安旗下，專攻小白球製造，2026產能全面復原", "tags": ["高爾夫", "小白球"]}, {"code": "8924", "name": "大田", "groups": ["高爾夫"], "description": "精密鑄造球桿頭，客戶結構分散穩健", "tags": ["高爾夫", "球桿頭", "精密鑄造"]}, {"code": "9960", "name": "邁達康", "groups": ["高爾夫"], "description": "高爾夫連鎖通路，終端市場風向球", "tags": ["高爾夫", "通路", "連鎖"]}, {"code": "6890", "name": "來億-KY", "groups": ["鞋子成衣"], "description": "Adidas與HOKA關鍵代工廠", "tags": ["鞋子", "Adidas", "HOKA", "代工", "世足"]}, {"code": "9910", "name": "豐泰", "groups": ["鞋子成衣"], "description": "Nike核心夥伴，足球鞋外溢效益", "tags": ["鞋子", "Nike", "運動鞋", "世足"]}, {"code": "9938", "name": "百和", "groups": ["鞋子成衣"], "description": "鞋材織帶與黏扣帶，已接獲世足賽隊徽與鞋材訂單", "tags": ["鞋子", "織帶", "黏扣帶", "世足"]}, {"code": "2377", "name": "微星", "groups": ["電腦顯卡"], "description": "電競板卡三雄之一", "tags": ["顯卡", "主機板", "電競", "AI伺服器"]}, {"code": "2465", "name": "麗臺", "groups": ["電腦顯卡"], "description": "顯卡與比特幣概念", "tags": ["顯卡", "比特幣"]}, {"code": "2425", "name": "承啟", "groups": ["電腦顯卡"], "description": "顯卡概念股", "tags": ["顯卡", "電腦"]}, {"code": "5386", "name": "青雲", "groups": ["電腦顯卡"], "description": "顯卡概念股", "tags": ["顯卡", "電腦"]}, {"code": "6150", "name": "撼訊", "groups": ["電腦顯卡"], "description": "顯卡設計與製造", "tags": ["顯卡"]}, {"code": "2399", "name": "映泰", "groups": ["電腦顯卡"], "description": "主機板與顯卡", "tags": ["顯卡", "主機板"]}, {"code": "2331", "name": "精英", "groups": ["電腦顯卡"], "description": "主機板與顯卡", "tags": ["顯卡", "主機板"]}, {"code": "1608", "name": "華榮", "groups": ["電線電纜"], "description": "電纜製造", "tags": ["電纜", "電線"]}, {"code": "1611", "name": "大東電", "groups": ["電線電纜"], "description": "電纜製造", "tags": ["電纜", "電線"]}, {"code": "1615", "name": "大山", "groups": ["電線電纜"], "description": "中部電網升級主力", "tags": ["電纜", "電線", "電網"]}, {"code": "1603", "name": "華電", "groups": ["電線電纜"], "description": "鋁線電纜龍頭", "tags": ["電纜", "電線", "鋁線"]}, {"code": "1616", "name": "億泰", "groups": ["電線電纜"], "description": "電纜製造", "tags": ["電纜", "電線"]}, {"code": "1617", "name": "榮星", "groups": ["電線電纜"], "description": "電纜製造", "tags": ["電纜", "電線"]}, {"code": "8044", "name": "網家", "groups": ["電商物流"], "description": "PChome，電商平台", "tags": ["電商", "PChome", "物流"]}, {"code": "2608", "name": "嘉里大榮", "groups": ["電商物流"], "description": "物流快遞龍頭", "tags": ["電商", "物流", "快遞", "宅配"]}, {"code": "4771", "name": "望隼", "groups": ["隱形眼鏡"], "description": "中國與日本代工主力，獲利成長最快指標", "tags": ["隱形眼鏡", "矽水膠", "代工"]}, {"code": "5505", "name": "浩泰", "groups": ["隱形眼鏡"], "description": "隱形眼鏡相關組件與通路", "tags": ["隱形眼鏡", "通路"]}, {"code": "1325", "name": "恆大", "groups": ["防疫口罩"], "description": "口罩與熔噴不織布", "tags": ["口罩", "不織布", "防疫", "熔噴"]}, {"code": "6504", "name": "南六", "groups": ["防疫口罩"], "description": "醫療級不織布原料龍頭", "tags": ["口罩", "不織布", "防疫", "醫療"]}, {"code": "3373", "name": "熱映", "groups": ["防疫口罩"], "description": "紅外線測溫儀指標", "tags": ["防疫", "紅外線", "測溫", "體溫計"]}, {"code": "4735", "name": "豪展", "groups": ["防疫口罩", "MOSFET二極體"], "description": "紅外線體溫計代工大廠", "tags": ["防疫", "紅外線", "體溫計", "MOSFET", "電晶體", "茂達"]}, {"code": "4133", "name": "亞諾法", "groups": ["防疫口罩", "生技醫療"], "description": "抗體/抗原開發技術", "tags": ["防疫", "快篩", "抗體", "抗原"]}, {"code": "4171", "name": "瑞基", "groups": ["防疫口罩", "生技醫療"], "description": "現場核酸檢測PCR", "tags": ["防疫", "PCR", "核酸檢測"]}, {"code": "1732", "name": "毛寶", "groups": ["防疫口罩"], "description": "環境消毒與抗病毒洗劑", "tags": ["防疫", "消毒", "清潔"]}, {"code": "4167", "name": "松瑞藥", "groups": ["防疫口罩", "生技醫療"], "description": "培南類抗生素，處理肺炎併發症", "tags": ["防疫", "抗生素", "藥品"]}, {"code": "6547", "name": "高端疫苗", "groups": ["防疫口罩", "生技醫療"], "description": "疫苗開發", "tags": ["防疫", "疫苗", "生技"]}, {"code": "6005", "name": "群益證", "groups": ["金融"], "description": "獲利穩健的高配息證券股", "tags": ["金融", "證券", "配息"]}, {"code": "6016", "name": "康和證", "groups": ["金融"], "description": "中小型券商，股性較活潑", "tags": ["金融", "證券"]}, {"code": "6027", "name": "福邦證", "groups": ["金融"], "description": "中小型券商，股性較活潑", "tags": ["金融", "證券"]}, {"code": "6021", "name": "美好證", "groups": ["金融"], "description": "中小型券商", "tags": ["金融", "證券"]}, {"code": "2886", "name": "兆豐金", "groups": ["金融"], "description": "銀行與金控指標", "tags": ["金融", "銀行", "金控"]}, {"code": "2884", "name": "玉山金", "groups": ["金融"], "description": "銀行與金控指標", "tags": ["金融", "銀行", "金控"]}, {"code": "2887", "name": "台新金", "groups": ["金融"], "description": "銀行與金控指標", "tags": ["金融", "銀行", "金控"]}, {"code": "2892", "name": "第一金", "groups": ["金融"], "description": "銀行與金控指標", "tags": ["金融", "銀行", "金控"]}, {"code": "2867", "name": "三商壽", "groups": ["金融"], "description": "壽險與保險指標", "tags": ["金融", "壽險", "保險"]}, {"code": "5878", "name": "台名", "groups": ["金融"], "description": "壽險與保險指標", "tags": ["金融", "壽險", "保險"]}, {"code": "6180", "name": "橘子", "groups": ["遊戲", "行動支付"], "description": "遊戲代理與電子支付，MyCard連動", "tags": ["遊戲", "代理", "點數", "行動支付"]}, {"code": "3086", "name": "華義", "groups": ["遊戲"], "description": "遊戲代理", "tags": ["遊戲", "代理"]}, {"code": "3687", "name": "歐買尬", "groups": ["遊戲", "行動支付"], "description": "遊戲代理與電子支付連動", "tags": ["遊戲", "代理", "點數", "行動支付"]}, {"code": "6111", "name": "大宇資", "groups": ["遊戲"], "description": "遊戲開發與經典IP授權", "tags": ["遊戲", "IP授權", "開發"]}, {"code": "4994", "name": "傳奇", "groups": ["遊戲"], "description": "遊戲開發與IP授權", "tags": ["遊戲", "IP授權"]}, {"code": "3083", "name": "網龍", "groups": ["遊戲"], "description": "遊戲開發與IP授權", "tags": ["遊戲", "IP授權", "開發"]}, {"code": "3546", "name": "宇峻", "groups": ["遊戲"], "description": "遊戲開發與IP授權", "tags": ["遊戲", "IP授權"]}, {"code": "8450", "name": "霹靂", "groups": ["遊戲"], "description": "文創IP相關，霹靂布袋戲", "tags": ["遊戲", "文創", "IP", "布袋戲"]}, {"code": "3605", "name": "宏致", "groups": ["連接器"], "description": "筆電、工業與車用連接", "tags": ["連接器", "筆電", "工業", "車用"]}, {"code": "6290", "name": "良維", "groups": ["連接器"], "description": "筆電、工業與車用連接", "tags": ["連接器", "筆電", "工業"]}, {"code": "8103", "name": "瀚荃", "groups": ["連接器"], "description": "筆電、工業與車用連接", "tags": ["連接器", "筆電", "工業"]}, {"code": "6134", "name": "萬旭", "groups": ["連接器"], "description": "特殊線材與車用影音線", "tags": ["連接器", "線材", "車用"]}, {"code": "6133", "name": "金橋", "groups": ["連接器"], "description": "特殊線材與車用影音線", "tags": ["連接器", "線材", "車用"]}, {"code": "3492", "name": "長盛", "groups": ["連接器"], "description": "特殊線材與車用影音線", "tags": ["連接器", "線材", "車用"]}, {"code": "2462", "name": "良得電", "groups": ["連接器"], "description": "特殊線材與車用影音線", "tags": ["連接器", "線材", "車用"]}, {"code": "1582", "name": "信錦", "groups": ["軸承摺疊機", "低軌衛星"], "description": "監視器與底座軸承龍頭，轉型切入低軌衛星與AI伺服器滑軌機構", "tags": ["軸承", "摺疊機", "低軌衛星", "AI伺服器", "滑軌"]}, {"code": "7722", "name": "LINE Pay", "groups": ["行動支付"], "description": "行動支付龍頭，台灣市佔最高，點數折抵帶動循環", "tags": ["行動支付", "支付", "LINE", "點數"]}, {"code": "6214", "name": "精誠", "groups": ["行動支付"], "description": "系統整合與支付通路，協助金融機構串接", "tags": ["行動支付", "支付", "系統整合"]}, {"code": "5306", "name": "桂盟", "groups": ["自行車"], "description": "全球鏈條龍頭，耗材更換剛需", "tags": ["自行車", "鏈條", "E-bike"]}, {"code": "3162", "name": "精確", "groups": ["自行車"], "description": "車架材料", "tags": ["自行車", "車架"]}, {"code": "1526", "name": "日馳", "groups": ["自行車"], "description": "變速系統", "tags": ["自行車", "變速"]}, {"code": "1517", "name": "利奇", "groups": ["自行車"], "description": "自行車零件", "tags": ["自行車", "零件"]}, {"code": "8933", "name": "愛地雅", "groups": ["自行車"], "description": "自行車相關", "tags": ["自行車"]}, {"code": "2072", "name": "世紀風電", "groups": ["綠色能源"], "description": "離岸風電水下基礎", "tags": ["風電", "離岸風電", "綠能"]}, {"code": "6648", "name": "天方能源", "groups": ["綠色能源"], "description": "能源服務", "tags": ["綠能", "風電", "太陽能"]}, {"code": "1723", "name": "中碳", "groups": ["綠色能源"], "description": "負極碳材龍頭，供電動車與儲能", "tags": ["綠能", "碳材", "電動車", "儲能"]}, {"code": "8440", "name": "綠電", "groups": ["綠色能源", "黃金避險"], "description": "廢電子回收，貴金屬再生", "tags": ["綠能", "回收", "貴金屬", "黃金"]}, {"code": "3447", "name": "展達", "groups": ["筆電"], "description": "藍天集團網通廠，轉型高規：光纖+AI邊緣運算+軍工零件", "tags": ["筆電", "NB", "網通", "AI邊緣運算", "軍工"]}, {"code": "8053", "name": "加高", "groups": ["石英元件"], "description": "受惠龍頭漲價帶動的比價效應", "tags": ["石英", "石英元件", "漲價"]}, {"code": "3221", "name": "台嘉碩", "groups": ["石英元件"], "description": "利基型石英元件", "tags": ["石英", "石英元件"]}, {"code": "8289", "name": "泰藝", "groups": ["石英元件"], "description": "利基型石英元件", "tags": ["石英", "石英元件"]}, {"code": "6160", "name": "安碁", "groups": ["石英元件"], "description": "利基型石英元件", "tags": ["石英", "石英元件"]}, {"code": "1795", "name": "美時", "groups": ["生技醫療"], "description": "全球抗癌藥布局指標", "tags": ["生技", "新藥", "抗癌", "CDMO"]}, {"code": "4123", "name": "晟德", "groups": ["生技醫療"], "description": "生技工業銀行，跨國投資布局", "tags": ["生技", "投資", "CDMO"]}, {"code": "4116", "name": "明基醫", "groups": ["生技醫療"], "description": "高階醫材", "tags": ["生技", "醫材", "醫療器材"]}, {"code": "4106", "name": "雃博", "groups": ["生技醫療"], "description": "高階醫材", "tags": ["生技", "醫材"]}, {"code": "4121", "name": "優盛", "groups": ["生技醫療"], "description": "高階醫材", "tags": ["生技", "醫材"]}, {"code": "4109", "name": "加捷生醫", "groups": ["生技醫療"], "description": "高階醫材", "tags": ["生技", "醫材"]}, {"code": "4743", "name": "合一", "groups": ["生技醫療"], "description": "特色新藥", "tags": ["生技", "新藥"]}, {"code": "3705", "name": "永信", "groups": ["生技醫療"], "description": "藥品製造", "tags": ["生技", "藥品"]}, {"code": "1760", "name": "寶齡富錦", "groups": ["生技醫療"], "description": "特色新藥", "tags": ["生技", "新藥", "藥品"]}, {"code": "4105", "name": "東洋", "groups": ["生技醫療", "防疫口罩"], "description": "藥品與疫苗", "tags": ["生技", "疫苗", "藥品", "防疫"]}, {"code": "6023", "name": "建榮", "groups": ["PCB載板", "CCL銅箔基板"], "description": "日系背景，高階低介電玻纖布技術", "tags": ["CCL", "玻纖布", "低介電"]}, {"code": "1773", "name": "勝一", "groups": ["特用化學"], "description": "電子級溶劑（清洗製程），先進製程綁定度極高", "tags": ["特用化學", "溶劑", "清洗", "先進製程"]}, {"code": "4755", "name": "三福化", "groups": ["特用化學"], "description": "IC顯影劑（TMAH）回收與剝離劑，先進封裝產能擴張受惠", "tags": ["特用化學", "顯影劑", "TMAH", "先進封裝"]}, {"code": "1727", "name": "中華化", "groups": ["特用化學"], "description": "電子級硫酸（製程清洗量最大化學品）", "tags": ["特用化學", "硫酸", "電子化學"]}, {"code": "1711", "name": "永光", "groups": ["特用化學"], "description": "光阻劑（DUV/I-line）供應商", "tags": ["特用化學", "光阻劑", "DUV"]}, {"code": "5434", "name": "崇越", "groups": ["特用化學"], "description": "代理信越化學與JSR至台積電，具備市場定價權", "tags": ["特用化學", "代理", "信越化學", "台積電"]}, {"code": "3010", "name": "華立", "groups": ["特用化學"], "description": "代理信越化學與JSR至台積電", "tags": ["特用化學", "代理", "JSR", "台積電"]}, {"code": "3717", "name": "聯嘉", "groups": ["特斯拉", "汽車車用相關"], "description": "LED車燈模組，墨西哥廠2026年中投產", "tags": ["特斯拉", "電動車", "LED車燈", "墨西哥"]}, {"code": "5309", "name": "系統電", "groups": ["特斯拉", "BBU電池"], "description": "胎壓偵測TPMS，BBU電池", "tags": ["特斯拉", "TPMS", "胎壓", "BBU"]}, {"code": "3715", "name": "定穎投控", "groups": ["特斯拉", "汽車車用相關", "PCB載板"], "description": "車用板，定穎投控", "tags": ["特斯拉", "車用板", "PCB"]}, {"code": "2540", "name": "愛山林", "groups": ["營建"], "description": "代銷與開發雙軌，2026廣告與推案量大", "tags": ["營建", "代銷", "開發"]}, {"code": "5508", "name": "永信建", "groups": ["營建"], "description": "高雄區域開發龍頭，完工後銷售毛利高", "tags": ["營建", "高雄", "開發"]}, {"code": "9906", "name": "欣巴巴", "groups": ["營建"], "description": "南部精華區開發", "tags": ["營建", "南部", "開發"]}, {"code": "2524", "name": "京城", "groups": ["營建"], "description": "深耕高雄與台南科技園區題材", "tags": ["營建", "高雄", "台南", "科技園區"]}, {"code": "4113", "name": "聯上", "groups": ["營建"], "description": "深耕高雄與台南科技園區題材", "tags": ["營建", "高雄", "台南"]}, {"code": "6177", "name": "達麗", "groups": ["營建"], "description": "傳統權值建商", "tags": ["營建", "建商"]}, {"code": "2545", "name": "皇翔", "groups": ["營建"], "description": "傳統權值建商", "tags": ["營建", "建商"]}, {"code": "2543", "name": "皇昌", "groups": ["營建"], "description": "傳統權值建商", "tags": ["營建", "建商"]}, {"code": "2101", "name": "南港", "groups": ["營建"], "description": "南港大開發案題材", "tags": ["營建", "南港", "開發案"]}, {"code": "5531", "name": "鄉林", "groups": ["營建"], "description": "建商", "tags": ["營建", "建商"]}, {"code": "2538", "name": "基泰", "groups": ["營建"], "description": "建商", "tags": ["營建", "建商"]}, {"code": "1453", "name": "大將", "groups": ["營建"], "description": "建商", "tags": ["營建", "建商"]}, {"code": "2537", "name": "聯上發", "groups": ["營建"], "description": "建商", "tags": ["營建", "建商"]}, {"code": "2613", "name": "中櫃", "groups": ["海運航運"], "description": "貨櫃航運", "tags": ["海運", "貨櫃", "航運"]}, {"code": "2636", "name": "台驊投控", "groups": ["海運航運"], "description": "航運代理與貨運服務", "tags": ["海運", "貨櫃", "代理", "航運"]}, {"code": "2612", "name": "中航", "groups": ["海運航運"], "description": "海峽型散裝航運，BCI指數連動", "tags": ["海運", "散裝", "BCI", "航運"]}, {"code": "2605", "name": "新興", "groups": ["海運航運"], "description": "海峽型散裝航運", "tags": ["海運", "散裝", "航運"]}, {"code": "2617", "name": "台航", "groups": ["海運航運"], "description": "巴拿馬型散裝航運，BPI指數", "tags": ["海運", "散裝", "BPI", "航運"]}, {"code": "2641", "name": "正德", "groups": ["海運航運"], "description": "巴拿馬型散裝航運", "tags": ["海運", "散裝", "航運"]}, {"code": "5608", "name": "四維航", "groups": ["海運航運"], "description": "輕便型散裝航運，BSI/BHSI指數", "tags": ["海運", "散裝", "BSI", "航運"]}, {"code": "1522", "name": "堤維西", "groups": ["汽車車用相關"], "description": "車零件與機構件", "tags": ["汽車", "車零件", "機構件"]}, {"code": "1568", "name": "倉佑", "groups": ["汽車車用相關"], "description": "車零件", "tags": ["汽車", "車零件"]}, {"code": "1524", "name": "耿鼎", "groups": ["汽車車用相關"], "description": "車零件與機構件", "tags": ["汽車", "車零件"]}, {"code": "2228", "name": "劍麟", "groups": ["汽車車用相關"], "description": "車零件", "tags": ["汽車", "車零件"]}, {"code": "1319", "name": "東陽", "groups": ["汽車車用相關"], "description": "車零件，車燈", "tags": ["汽車", "車零件", "車燈"]}, {"code": "6605", "name": "帝寶", "groups": ["汽車車用相關"], "description": "車燈零件", "tags": ["汽車", "車零件", "車燈"]}, {"code": "6279", "name": "胡連", "groups": ["汽車車用相關"], "description": "車用連接器", "tags": ["汽車", "連接器", "車用"]}, {"code": "3003", "name": "健和興", "groups": ["汽車車用相關"], "description": "車用零件", "tags": ["汽車", "車零件"]}, {"code": "1521", "name": "大億", "groups": ["汽車車用相關"], "description": "車零件", "tags": ["汽車", "車零件"]}, {"code": "9951", "name": "皇田", "groups": ["汽車車用相關", "特斯拉"], "description": "墨西哥廠積極推動供應鏈在地化，避開關稅", "tags": ["汽車", "車零件", "墨西哥", "關稅"]}, {"code": "2497", "name": "怡利電", "groups": ["汽車車用相關"], "description": "車用電子、照明", "tags": ["汽車", "車用電子", "照明"]}, {"code": "3701", "name": "大眾控", "groups": ["汽車車用相關"], "description": "車用電子", "tags": ["汽車", "車用電子"]}, {"code": "5439", "name": "高技", "groups": ["汽車車用相關", "PCB載板"], "description": "車用PCB", "tags": ["汽車", "PCB", "車用板"]}, {"code": "2206", "name": "三陽工業", "groups": ["汽車車用相關"], "description": "整車製造，機車", "tags": ["汽車", "整車", "機車"]}, {"code": "2207", "name": "和泰車", "groups": ["汽車車用相關", "叫車租車"], "description": "整車代理，Toyota", "tags": ["汽車", "整車", "Toyota", "叫車", "租車"]}, {"code": "8473", "name": "山林水", "groups": ["水資源"], "description": "力麒集團，廢水處理、再生水案場維運指標", "tags": ["水資源", "廢水", "再生水"]}, {"code": "3703", "name": "欣陸", "groups": ["水資源"], "description": "旗下欣達環工，掌握大量再生水與污水處理特許權", "tags": ["水資源", "再生水", "污水"]}, {"code": "5512", "name": "力麒", "groups": ["水資源"], "description": "母憑子貴，轉投資山林水水務收益", "tags": ["水資源", "水務", "力麒"]}, {"code": "6117", "name": "迎廣", "groups": ["機殼滑軌"], "description": "伺服器機殼", "tags": ["機殼", "伺服器機架"]}, {"code": "3693", "name": "營邦", "groups": ["機殼滑軌"], "description": "伺服器機殼", "tags": ["機殼", "伺服器機架"]}, {"code": "5465", "name": "富驊", "groups": ["機殼滑軌"], "description": "伺服器機殼", "tags": ["機殼", "伺服器機架"]}, {"code": "5426", "name": "振發", "groups": ["機殼滑軌"], "description": "電腦電競工業機殼", "tags": ["機殼", "電競", "電腦"]}, {"code": "1569", "name": "濱川", "groups": ["機殼滑軌"], "description": "電腦工業機殼", "tags": ["機殼", "工業", "電腦"]}, {"code": "3325", "name": "旭品", "groups": ["機殼滑軌"], "description": "電腦機殼", "tags": ["機殼", "電腦"]}, {"code": "3540", "name": "曜越", "groups": ["機殼滑軌"], "description": "電競與電源機殼", "tags": ["機殼", "電競", "電源"]}, {"code": "3032", "name": "偉訓", "groups": ["機殼滑軌"], "description": "電競與電源機殼", "tags": ["機殼", "電競", "電源"]}, {"code": "2474", "name": "可成", "groups": ["機殼滑軌"], "description": "高階筆電與利基型機構件", "tags": ["機殼", "筆電", "機構件"]}, {"code": "3206", "name": "志豐", "groups": ["揚聲器"], "description": "聲學元件與警報器，轉型切入車用與AI語音", "tags": ["揚聲器", "聲學", "車用", "AI語音"]}, {"code": "4943", "name": "康控-KY", "groups": ["揚聲器"], "description": "高階聲學元件與精密機構件", "tags": ["揚聲器", "聲學", "精密機構件"]}, {"code": "3580", "name": "友威科", "groups": ["扇形封裝"], "description": "FOPLP濺鍍、AOI檢測設備", "tags": ["扇形封裝", "FOPLP", "濺鍍", "AOI"]}, {"code": "3535", "name": "晶彩科", "groups": ["扇形封裝"], "description": "FOPLP AOI檢測設備", "tags": ["扇形封裝", "FOPLP", "AOI"]}, {"code": "2489", "name": "瑞軒", "groups": ["扇形封裝"], "description": "光學膜", "tags": ["扇形封裝", "面板", "光學膜"]}, {"code": "8240", "name": "華宏", "groups": ["扇形封裝"], "description": "光學膜", "tags": ["扇形封裝", "面板", "光學膜"]}, {"code": "3051", "name": "力特", "groups": ["扇形封裝"], "description": "偏光片", "tags": ["扇形封裝", "面板", "偏光片"]}, {"code": "3088", "name": "艾訊", "groups": ["工業電腦"], "description": "智慧工廠與自動化整合", "tags": ["工業電腦", "智慧工廠", "自動化"]}, {"code": "8234", "name": "新漢", "groups": ["工業電腦"], "description": "智慧工廠與自動化整合", "tags": ["工業電腦", "智慧工廠"]}, {"code": "3022", "name": "威強電", "groups": ["工業電腦"], "description": "車載與AI運算模組", "tags": ["工業電腦", "車載", "AI運算"]}, {"code": "6579", "name": "研揚", "groups": ["工業電腦"], "description": "車載與AI運算模組", "tags": ["工業電腦", "車載"]}, {"code": "6166", "name": "凌華", "groups": ["工業電腦"], "description": "車載與AI運算模組", "tags": ["工業電腦", "車載"]}, {"code": "3416", "name": "融程電", "groups": ["工業電腦"], "description": "強固型平板，跨足軍工與醫療", "tags": ["工業電腦", "軍工", "醫療", "強固型"]}, {"code": "6206", "name": "飛捷", "groups": ["工業電腦"], "description": "支付系統與零售POS", "tags": ["工業電腦", "POS", "零售", "支付"]}, {"code": "3594", "name": "磐儀", "groups": ["工業電腦"], "description": "支付系統與零售POS", "tags": ["工業電腦", "POS", "零售"]}, {"code": "5258", "name": "虹堡", "groups": ["工業電腦"], "description": "支付系統與零售POS", "tags": ["工業電腦", "POS", "零售"]}, {"code": "6245", "name": "立端", "groups": ["工業電腦"], "description": "網安與資安設備指標", "tags": ["工業電腦", "資安", "網安"]}, {"code": "4576", "name": "大銀微系統", "groups": ["工具機", "機器人"], "description": "精密線性傳動與機器人雙棲龍頭", "tags": ["工具機", "機器人", "線性傳動", "精密"]}, {"code": "4563", "name": "百德", "groups": ["工具機"], "description": "高階五軸機龍頭，2026成功轉型航太與氫能設備", "tags": ["工具機", "五軸機", "航太", "氫能"]}, {"code": "4561", "name": "健椿", "groups": ["工具機"], "description": "精密主軸龍頭，2026因CoWoS封裝切割需求大爆發", "tags": ["工具機", "主軸", "CoWoS", "精密"]}, {"code": "1530", "name": "亞崴", "groups": ["工具機"], "description": "精密車床與大型龍門加工指標", "tags": ["工具機", "車床", "龍門加工"]}, {"code": "1583", "name": "程泰", "groups": ["工具機"], "description": "精密車床與大型龍門加工指標", "tags": ["工具機", "車床"]}, {"code": "4513", "name": "福裕", "groups": ["工具機"], "description": "精密磨床、沖壓與高階車床", "tags": ["工具機", "磨床", "沖壓"]}, {"code": "4533", "name": "協易機", "groups": ["工具機"], "description": "精密磨床、沖壓", "tags": ["工具機", "沖壓"]}, {"code": "6609", "name": "瀧澤科", "groups": ["工具機"], "description": "高階車床", "tags": ["工具機", "車床"]}, {"code": "1528", "name": "恩德", "groups": ["工具機"], "description": "CNC設備與木工機轉型", "tags": ["工具機", "CNC", "木工機"]}, {"code": "1515", "name": "力山", "groups": ["工具機"], "description": "專業木工機與手工具，受惠美國房市需求", "tags": ["工具機", "木工機", "手工具", "美國"]}, {"code": "1539", "name": "巨庭", "groups": ["工具機"], "description": "專業木工機與手工具", "tags": ["工具機", "木工機"]}, {"code": "4555", "name": "氣立", "groups": ["工具機"], "description": "氣動元件", "tags": ["工具機", "氣動元件"]}, {"code": "2233", "name": "宇隆", "groups": ["工具機"], "description": "精密零件加工", "tags": ["工具機", "精密零件"]}, {"code": "4510", "name": "高鋒", "groups": ["工具機"], "description": "工具機", "tags": ["工具機"]}, {"code": "1540", "name": "喬福", "groups": ["工具機"], "description": "工具機", "tags": ["工具機"]}, {"code": "4526", "name": "東台", "groups": ["工具機"], "description": "工具機", "tags": ["工具機"]}, {"code": "4540", "name": "全球傳動", "groups": ["工具機", "機器人"], "description": "精密傳動", "tags": ["工具機", "精密傳動", "機器人"]}, {"code": "1593", "name": "精湛", "groups": ["工具機"], "description": "工具機", "tags": ["工具機"]}, {"code": "5285", "name": "界霖", "groups": ["導線架均熱片"], "description": "專攻車用與工業功率元件導線架", "tags": ["導線架", "車用", "功率元件"]}, {"code": "3128", "name": "昇銳", "groups": ["安全監控"], "description": "安全監控設備", "tags": ["安全監控", "監控", "影像"]}, {"code": "3315", "name": "哲固", "groups": ["安全監控"], "description": "安全監控設備", "tags": ["安全監控", "監控"]}, {"code": "5251", "name": "天鉞電", "groups": ["安全監控"], "description": "安全監控設備", "tags": ["安全監控", "監控"]}, {"code": "3297", "name": "杭特", "groups": ["安全監控"], "description": "安全監控設備", "tags": ["安全監控", "監控"]}, {"code": "8072", "name": "陞泰", "groups": ["安全監控"], "description": "安全監控設備", "tags": ["安全監控", "監控"]}, {"code": "6477", "name": "安集", "groups": ["太陽能"], "description": "電廠與模組", "tags": ["太陽能", "模組", "電廠", "綠能"]}, {"code": "3686", "name": "達能", "groups": ["太陽能", "PCB載板"], "description": "太陽能", "tags": ["太陽能", "綠能", "PCB", "鑽孔", "PCB設備"]}, {"code": "4934", "name": "太極", "groups": ["太陽能"], "description": "太陽能", "tags": ["太陽能", "綠能"]}, {"code": "6909", "name": "有成精密", "groups": ["太陽能"], "description": "半導體與太陽能雙棲，2026市場關注度顯著提升", "tags": ["太陽能", "半導體設備", "太陽能支架"]}, {"code": "3514", "name": "新晶投控", "groups": ["太陽能"], "description": "太陽能相關", "tags": ["太陽能", "綠能"]}, {"code": "1308", "name": "亞聚", "groups": ["塑化"], "description": "EVA因鞋材需求爆發與太陽能需求，價格飆漲", "tags": ["塑化", "EVA", "太陽能", "鞋材"]}, {"code": "1304", "name": "台聚", "groups": ["塑化"], "description": "EVA漲價受惠", "tags": ["塑化", "EVA"]}, {"code": "1305", "name": "華夏", "groups": ["塑化"], "description": "PVC龍頭，受惠美國與印度基建需求", "tags": ["塑化", "PVC", "基建"]}, {"code": "1312", "name": "國喬", "groups": ["塑化"], "description": "SM/ABS樹脂，報價連動性強", "tags": ["塑化", "ABS", "SM", "樹脂"]}, {"code": "1309", "name": "台達化", "groups": ["塑化"], "description": "ABS/PS", "tags": ["塑化", "ABS", "PS"]}, {"code": "1313", "name": "聯成", "groups": ["塑化"], "description": "DOP塑化劑", "tags": ["塑化", "DOP"]}, {"code": "6592", "name": "和潤企業", "groups": ["叫車租車"], "description": "和泰集團，主攻新車/大型設備融資", "tags": ["叫車", "租賃", "融資", "和泰"]}, {"code": "6859", "name": "伯特光", "groups": ["光學鏡頭"], "description": "高階鏡頭模具，專攻玻璃與玻塑混合模具", "tags": ["光學", "鏡頭", "模具", "玻璃"]}, {"code": "4976", "name": "佳凌", "groups": ["光學鏡頭"], "description": "車載光學，玻璃鏡頭專家", "tags": ["光學", "鏡頭", "車用", "玻璃鏡頭"]}, {"code": "6209", "name": "今國光", "groups": ["光學鏡頭"], "description": "切入紅外線與AI監控鏡頭", "tags": ["光學", "鏡頭", "紅外線", "AI監控"]}, {"code": "3441", "name": "聯一光", "groups": ["光學鏡頭"], "description": "光學玻璃毛胚，材料端連動", "tags": ["光學", "玻璃毛胚", "材料"]}, {"code": "4985", "name": "榮科", "groups": ["PCB載板"], "description": "電解銅箔", "tags": ["PCB", "銅箔", "CCL"]}, {"code": "5475", "name": "德宏", "groups": ["PCB載板"], "description": "玻纖紗，PCB基材", "tags": ["PCB", "玻纖紗", "CCL"]}, {"code": "3044", "name": "健鼎", "groups": ["PCB載板"], "description": "高階PCB", "tags": ["PCB", "AI伺服器"]}, {"code": "2316", "name": "楠梓電", "groups": ["PCB載板"], "description": "PCB製造", "tags": ["PCB"]}, {"code": "3030", "name": "德律", "groups": ["PCB載板"], "description": "AOI檢測", "tags": ["PCB", "AOI", "檢測", "PCB設備"]}, {"code": "6438", "name": "迅得", "groups": ["PCB載板"], "description": "自動化搬運設備", "tags": ["PCB", "自動化", "搬運", "PCB設備"]}, {"code": "3455", "name": "由田", "groups": ["PCB載板"], "description": "PCB設備", "tags": ["PCB", "PCB設備"]}, {"code": "6658", "name": "聯策", "groups": ["PCB載板"], "description": "PCB設備", "tags": ["PCB", "PCB設備"]}, {"code": "3167", "name": "大量", "groups": ["PCB載板"], "description": "PCB設備", "tags": ["PCB", "PCB設備"]}, {"code": "3498", "name": "陽程", "groups": ["PCB載板"], "description": "PCB設備", "tags": ["PCB", "PCB設備"]}, {"code": "8021", "name": "尖點", "groups": ["PCB載板"], "description": "鑽孔耗材", "tags": ["PCB", "鑽孔", "耗材"]}, {"code": "5498", "name": "凱崴", "groups": ["PCB載板"], "description": "墊板耗材", "tags": ["PCB", "墊板", "耗材"]}, {"code": "3317", "name": "尼克森", "groups": ["MOSFET二極體"], "description": "主機板應用大廠，具備價格競爭優勢", "tags": ["MOSFET", "電晶體", "主機板"]}, {"code": "5487", "name": "通泰", "groups": ["MCU半導體"], "description": "多媒體與觸控相關", "tags": ["MCU", "觸控", "多媒體"]}, {"code": "6937", "name": "天虹", "groups": ["MCU半導體"], "description": "本土半導體設備商，專攻ALD與PVD物理氣相沉積", "tags": ["MCU", "半導體設備", "ALD", "PVD"]}, {"code": "3588", "name": "華景電", "groups": ["MCU半導體"], "description": "晶圓傳輸設備與環境控制", "tags": ["MCU", "半導體設備", "晶圓傳輸"]}, {"code": "3581", "name": "博磊", "groups": ["MCU半導體"], "description": "封裝測試設備與代理", "tags": ["MCU", "半導體設備", "封測設備"]}, {"code": "3055", "name": "蔚華科", "groups": ["MCU半導體"], "description": "封裝測試設備與代理", "tags": ["MCU", "半導體設備", "封測設備"]}, {"code": "5244", "name": "弘凱", "groups": ["Micro LED"], "description": "IC封裝型LED，智慧座艙應用", "tags": ["LED", "IC封裝", "智慧座艙"]}, {"code": "3339", "name": "泰谷", "groups": ["Micro LED"], "description": "LED元件", "tags": ["LED"]}, {"code": "3031", "name": "佰鴻", "groups": ["Micro LED"], "description": "LED元件", "tags": ["LED"]}, {"code": "3624", "name": "光頡", "groups": ["Micro LED", "被動元件"], "description": "IC封裝型LED，MLCC被動元件", "tags": ["LED", "被動元件", "MLCC"]}, {"code": "3066", "name": "李洲", "groups": ["Micro LED"], "description": "LED元件", "tags": ["LED"]}, {"code": "4931", "name": "新盛力", "groups": ["BBU電池"], "description": "資料中心BBU與儲能模組", "tags": ["BBU", "電池", "儲能", "資料中心"]}, {"code": "8171", "name": "天宇", "groups": ["BBU電池"], "description": "電容與電池組件連動", "tags": ["BBU", "電池", "電容"]}, {"code": "3323", "name": "加百裕", "groups": ["BBU電池"], "description": "電池組件", "tags": ["BBU", "電池"]}, {"code": "3090", "name": "日電貿", "groups": ["BBU電池"], "description": "電容與電池組件", "tags": ["BBU", "電池", "電容"]}, {"code": "4721", "name": "美琪瑪", "groups": ["BBU電池"], "description": "動力電池正極材料", "tags": ["BBU", "電池", "正極材料", "動力電池"]}, {"code": "4739", "name": "康普", "groups": ["BBU電池"], "description": "動力電池正極材料", "tags": ["BBU", "電池", "正極材料"]}, {"code": "6509", "name": "聚和", "groups": ["BBU電池", "特用化學"], "description": "電池電解液添加劑，特用化學", "tags": ["BBU", "電池", "電解液", "特用化學"]}, {"code": "6435", "name": "大中", "groups": ["MOSFET二極體", "電源管理IC"], "description": "茂達集團，MOSFET，技術穩定", "tags": ["MOSFET", "電晶體", "茂達", "PMIC", "功率半導體", "電源管理IC", "茂達集團"]}, {"code": "8928", "name": "鉅明", "groups": ["高爾夫"], "description": "高爾夫球頭製造", "tags": ["高爾夫", "球頭", "精密鑄造"]}, {"code": "3706", "name": "神達", "groups": ["AI伺服器"], "description": "神達電腦，AI伺服器代工", "tags": ["AI伺服器", "伺服器", "代工"]}, {"code": "6742", "name": "澤米", "groups": ["AR眼鏡"], "description": "光學鍍膜技術", "tags": ["AR眼鏡", "光學鍍膜", "鍍膜"]}, {"code": "6672", "name": "騰輝電子-KY", "groups": ["AR眼鏡"], "description": "高階散熱基板", "tags": ["AR眼鏡", "散熱基板", "高階基板"]}, {"code": "2369", "name": "菱生", "groups": ["IC半導體"], "description": "IC封測", "tags": ["IC半導體", "封測"]}, {"code": "3372", "name": "典範", "groups": ["IC半導體"], "description": "IC封測", "tags": ["IC半導體", "封測"]}, {"code": "6261", "name": "久元", "groups": ["IC半導體"], "description": "IC封測", "tags": ["IC半導體", "封測"]}, {"code": "6525", "name": "捷敏-KY", "groups": ["IC半導體"], "description": "IC封測", "tags": ["IC半導體", "封測"]}, {"code": "6113", "name": "亞矽", "groups": ["IC半導體"], "description": "IC通路", "tags": ["IC半導體", "IC通路"]}, {"code": "6227", "name": "茂綸", "groups": ["IC半導體"], "description": "IC通路", "tags": ["IC半導體", "IC通路"]}, {"code": "3528", "name": "安馳", "groups": ["IC半導體"], "description": "IC通路", "tags": ["IC半導體", "IC通路"]}, {"code": "8096", "name": "擎亞", "groups": ["IC半導體"], "description": "IC通路", "tags": ["IC半導體", "IC通路"]}, {"code": "3312", "name": "弘憶股", "groups": ["IC半導體"], "description": "IC通路", "tags": ["IC半導體", "IC通路"]}, {"code": "3209", "name": "全科", "groups": ["IC半導體"], "description": "IC通路", "tags": ["IC半導體", "IC通路"]}, {"code": "3702", "name": "大聯大", "groups": ["IC半導體"], "description": "IC通路龍頭", "tags": ["IC半導體", "IC通路"]}, {"code": "3068", "name": "百徽", "groups": ["IC半導體"], "description": "IC通路", "tags": ["IC半導體", "IC通路"]}, {"code": "3036", "name": "文曄", "groups": ["IC半導體"], "description": "IC通路", "tags": ["IC半導體", "IC通路"]}, {"code": "2485", "name": "兆赫", "groups": ["低軌衛星", "網通"], "description": "網通與衛星通訊設備", "tags": ["低軌衛星", "網通", "天線"]}, {"code": "4916", "name": "事欣科", "groups": ["低軌衛星", "軍工無人機"], "description": "航太級機殼與結構件，波音訂單", "tags": ["低軌衛星", "航太", "機殼", "波音"]}, {"code": "3178", "name": "公準", "groups": ["低軌衛星"], "description": "精密機構件", "tags": ["低軌衛星", "機構件"]}, {"code": "3305", "name": "昇貿", "groups": ["低軌衛星"], "description": "低溫焊錫膏", "tags": ["低軌衛星", "焊錫膏"]}, {"code": "2424", "name": "隴華", "groups": ["低軌衛星"], "description": "電源/傳輸連動，低軌衛星相關", "tags": ["低軌衛星", "電源", "傳輸"]}, {"code": "6190", "name": "萬泰科", "groups": ["低軌衛星"], "description": "電源/傳輸連動", "tags": ["低軌衛星", "電源"]}, {"code": "3508", "name": "位速", "groups": ["元宇宙"], "description": "元宇宙概念股", "tags": ["元宇宙", "VR"]}, {"code": "8040", "name": "九暘", "groups": ["元宇宙"], "description": "元宇宙概念股", "tags": ["元宇宙"]}, {"code": "6756", "name": "威鋒電子", "groups": ["元宇宙"], "description": "元宇宙高速傳輸", "tags": ["元宇宙", "高速傳輸"]}, {"code": "4966", "name": "譜瑞-KY", "groups": ["元宇宙"], "description": "高速傳輸接口，元宇宙顯示", "tags": ["元宇宙", "高速傳輸", "顯示"]}, {"code": "6691", "name": "洋基工程", "groups": ["台積設備", "無塵室"], "description": "機電整合與高階無塵室工程", "tags": ["台積設備", "無塵室", "機電"]}, {"code": "6187", "name": "萬潤", "groups": ["台積設備"], "description": "挑揀與貼合設備，CoWoS製程", "tags": ["台積設備", "CoWoS", "挑揀", "貼合"]}, {"code": "6640", "name": "均華", "groups": ["台積設備"], "description": "挑揀與貼合設備，CoWoS製程", "tags": ["台積設備", "CoWoS", "挑揀"]}, {"code": "5443", "name": "均豪", "groups": ["台積設備"], "description": "烘烤與檢測設備", "tags": ["台積設備", "CoWoS", "烘烤", "檢測"]}, {"code": "8415", "name": "大國鋼", "groups": ["金屬鋼鐵"], "description": "全球最大工業扣件通路商，北美市佔率極高", "tags": ["鋼鐵", "扣件", "北美", "關稅"]}, {"code": "2009", "name": "第一銅", "groups": ["金屬鋼鐵"], "description": "最純銅片加工廠，2026銅價飆漲直接受惠者", "tags": ["鋼鐵", "銅", "銅價", "AI伺服器"]}, {"code": "5009", "name": "榮剛", "groups": ["金屬鋼鐵", "軍工無人機"], "description": "特殊鋼大廠，2026航太去中國化訂單受惠", "tags": ["鋼鐵", "特殊鋼", "航太"]}, {"code": "2006", "name": "東和鋼鐵", "groups": ["金屬鋼鐵"], "description": "H型鋼與鋼筋，電爐煉鋼碳足跡低，受惠碳費時代", "tags": ["鋼鐵", "電爐", "碳費"]}, {"code": "2211", "name": "長榮鋼", "groups": ["金屬鋼鐵"], "description": "鋼構龍頭，受惠國內AI廠辦與公共工程", "tags": ["鋼鐵", "鋼構", "AI廠辦"]}, {"code": "2038", "name": "海光", "groups": ["金屬鋼鐵"], "description": "南部鋼筋與線材指標", "tags": ["鋼鐵", "鋼筋"]}, {"code": "2028", "name": "威致", "groups": ["金屬鋼鐵"], "description": "南部鋼筋與線材指標", "tags": ["鋼鐵", "鋼筋"]}, {"code": "2034", "name": "允強", "groups": ["金屬鋼鐵"], "description": "不鏽鋼管與板材龍頭", "tags": ["鋼鐵", "不鏽鋼"]}, {"code": "2030", "name": "彰源", "groups": ["金屬鋼鐵"], "description": "不鏽鋼管與板材加工", "tags": ["鋼鐵", "不鏽鋼"]}, {"code": "2032", "name": "新鋼", "groups": ["金屬鋼鐵"], "description": "不鏽鋼管與板材加工", "tags": ["鋼鐵", "不鏽鋼"]}, {"code": "2007", "name": "燁興", "groups": ["金屬鋼鐵"], "description": "不鏽鋼管與板材加工", "tags": ["鋼鐵", "不鏽鋼"]}, {"code": "2014", "name": "中鴻", "groups": ["金屬鋼鐵"], "description": "熱軋冷軋鋼捲，受惠亞洲鋼價回升", "tags": ["鋼鐵", "鋼捲"]}, {"code": "2022", "name": "聚亨", "groups": ["金屬鋼鐵"], "description": "螺絲線材，全球布局", "tags": ["鋼鐵", "線材", "螺絲"]}, {"code": "2478", "name": "大毅", "groups": ["被動元件"], "description": "電阻大廠", "tags": ["被動元件", "電阻"]}, {"code": "3026", "name": "禾伸堂", "groups": ["被動元件"], "description": "MLCC代理與電阻", "tags": ["被動元件", "MLCC", "電阻"]}, {"code": "6127", "name": "九豪", "groups": ["被動元件"], "description": "被動元件上游材料", "tags": ["被動元件", "材料"]}, {"code": "8121", "name": "越峰", "groups": ["被動元件"], "description": "被動元件上游材料", "tags": ["被動元件", "材料"]}, {"code": "8043", "name": "蜜望實", "groups": ["被動元件"], "description": "被動元件相關", "tags": ["被動元件"]}, {"code": "2719", "name": "燦星旅", "groups": ["觀光旅遊"], "description": "旅行社", "tags": ["觀光", "旅遊", "旅行社"]}, {"code": "2734", "name": "易飛網", "groups": ["觀光旅遊"], "description": "線上旅遊平台", "tags": ["觀光", "旅遊", "線上"]}, {"code": "2748", "name": "雲品", "groups": ["觀光旅遊"], "description": "飯店住宿，雲品溫泉酒店", "tags": ["觀光", "飯店"]}, {"code": "5704", "name": "老爺知", "groups": ["觀光旅遊"], "description": "老爺酒店集團", "tags": ["觀光", "飯店"]}, {"code": "2722", "name": "夏都", "groups": ["觀光旅遊"], "description": "渡假村飯店", "tags": ["觀光", "飯店", "渡假"]}, {"code": "2705", "name": "六福", "groups": ["觀光旅遊"], "description": "六福村渡假飯店", "tags": ["觀光", "飯店", "渡假"]}, {"code": "2740", "name": "富野", "groups": ["觀光旅遊"], "description": "富野渡假酒店", "tags": ["觀光", "飯店", "渡假"]}, {"code": "3252", "name": "海灣", "groups": ["觀光旅遊"], "description": "海灣餐飲觀光", "tags": ["觀光", "餐飲", "海灣"]}, {"code": "5703", "name": "亞都", "groups": ["觀光旅遊"], "description": "亞都麗緻飯店", "tags": ["觀光", "飯店"]}, {"code": "3004", "name": "豐達科", "groups": ["軍工無人機"], "description": "軍工零組件與精密材料", "tags": ["軍工", "精密零件"]}, {"code": "5284", "name": "JPP-KY", "groups": ["軍工無人機"], "description": "軍工零組件", "tags": ["軍工", "精密零件"]}, {"code": "6829", "name": "千附精密", "groups": ["軍工無人機"], "description": "軍工精密零件", "tags": ["軍工", "精密"]}, {"code": "1342", "name": "八貫", "groups": ["軍工無人機"], "description": "軍工零組件", "tags": ["軍工", "零組件"]}, {"code": "8467", "name": "波力-KY", "groups": ["軍工無人機"], "description": "軍工精密材料", "tags": ["軍工", "精密材料"]}, {"code": "6928", "name": "攸泰科技", "groups": ["軍工無人機"], "description": "慣性導航系統", "tags": ["軍工", "無人機", "慣性導航"]}, {"code": "8499", "name": "昶瑞機電", "groups": ["軍工無人機"], "description": "無人機馬達與電調", "tags": ["軍工", "無人機", "馬達", "電調"]}, {"code": "6791", "name": "虎門科技", "groups": ["軍工無人機"], "description": "無人機相關", "tags": ["軍工", "無人機"]}, {"code": "2458", "name": "義隆", "groups": ["軍工無人機"], "description": "無人機感測控制", "tags": ["軍工", "無人機", "感測"]}, {"code": "3059", "name": "華晶科", "groups": ["軍工無人機"], "description": "AI視覺影像，無人機應用", "tags": ["軍工", "無人機", "AI視覺"]}, {"code": "2429", "name": "銘旺科", "groups": ["軍工無人機"], "description": "變形翼無人載具", "tags": ["軍工", "無人機", "變形翼"]}, {"code": "5536", "name": "聖暉", "groups": ["無塵室"], "description": "中高階無塵室與機電工程", "tags": ["無塵室", "機電工程"]}, {"code": "3015", "name": "全漢", "groups": ["電源供應器"], "description": "電競、伺服器與影像傳輸電源", "tags": ["電源", "伺服器", "電競"]}, {"code": "2385", "name": "群光", "groups": ["電源供應器"], "description": "電競、伺服器電源", "tags": ["電源", "伺服器", "電競"]}, {"code": "3078", "name": "僑威", "groups": ["電源供應器"], "description": "高階電競電源", "tags": ["電源", "電競"]}, {"code": "3296", "name": "勝德", "groups": ["電源供應器"], "description": "電源供應器", "tags": ["電源"]}, {"code": "2413", "name": "環科", "groups": ["電源供應器"], "description": "電源供應器", "tags": ["電源"]}, {"code": "2753", "name": "八方雲集", "groups": ["食品餐飲"], "description": "平價餐飲龍頭，抗通膨屬性強", "tags": ["食品", "餐飲", "連鎖", "平價"]}, {"code": "2729", "name": "瓦城", "groups": ["食品餐飲"], "description": "東方菜系龍頭", "tags": ["食品", "餐飲", "連鎖"]}, {"code": "1236", "name": "宏亞", "groups": ["食品餐飲"], "description": "巧克力與餅乾食品", "tags": ["食品", "餅乾", "巧克力"]}, {"code": "1203", "name": "味王", "groups": ["食品餐飲"], "description": "味精與食品", "tags": ["食品", "味精"]}, {"code": "1218", "name": "泰山", "groups": ["食品餐飲"], "description": "飲料與食品", "tags": ["食品", "飲料"]}, {"code": "1215", "name": "卜蜂", "groups": ["食品餐飲"], "description": "肉類加工與飼料", "tags": ["食品", "肉類", "飼料"]}, {"code": "1210", "name": "大成", "groups": ["食品餐飲"], "description": "肉類加工與飼料", "tags": ["食品", "肉類", "飼料"]}, {"code": "1231", "name": "聯華食", "groups": ["食品餐飲"], "description": "零食與鮮食，供應超商鮮食", "tags": ["食品", "零食", "鮮食", "超商"]}, {"code": "2723", "name": "美食-KY", "groups": ["食品餐飲"], "description": "85度C，轉向美國市場擴展", "tags": ["食品", "餐飲", "85度C", "美國"]}, {"code": "2426", "name": "鼎元", "groups": ["Micro LED"], "description": "LED磊晶與晶粒製造", "tags": ["LED", "Micro LED", "磊晶", "晶粒"]}, {"code": "8081", "name": "致新", "groups": ["電源管理IC"], "description": "PMIC+驅動IC市場領導，AI PC、面板、網通PMIC，車用與伺服器持續滲透", "tags": ["PMIC", "電源管理IC", "驅動IC", "AI PC", "面板", "網通", "車用"]}, {"code": "6719", "name": "力智", "groups": ["電源管理IC"], "description": "多相位控制器與伺服器電源管理，AI伺服器滲透率提升，隸屬華碩集團", "tags": ["PMIC", "電源管理IC", "多相位控制器", "AI伺服器", "功率半導體", "華碩"]}, {"code": "6415", "name": "矽力-KY", "groups": ["電源管理IC"], "description": "高效能PMIC龍頭，毛利率超過50%，車用與AI伺服器高成長，大陸國產替代商機", "tags": ["PMIC", "電源管理IC", "車用", "AI伺服器", "功率半導體", "高毛利"]}, {"code": "6799", "name": "來頡", "groups": ["電源管理IC"], "description": "網通PMIC、WiFi 7受惠者，8成營收來自資通訊", "tags": ["PMIC", "電源管理IC", "網通", "WiFi 7", "資通訊"]}, {"code": "4951", "name": "精拓科", "groups": ["電源管理IC", "IC半導體"], "description": "類比IC+PMIC+高速傳輸IC，USB/PCIe/Type-C介面，電源管理IC應用廣泛", "tags": ["PMIC", "電源管理IC", "類比IC", "高速傳輸", "USB", "PCIe", "Type-C", "IC設計"]}, {"code": "1597", "name": "直得", "groups": ["機器人", "工具機"], "description": "線性滑軌與精密傳動元件，機器人關節傳動，受惠工具機與機器人需求", "tags": ["機器人", "線性滑軌", "精密傳動", "工具機"]}, {"code": "4764", "name": "雙鍵", "groups": ["散熱液冷"], "description": "散熱模組，均溫板與熱導管，切入AI伺服器散熱", "tags": ["散熱", "液冷", "均溫板", "熱導管", "AI伺服器"]}, {"code": "6831", "name": "邁科", "groups": ["散熱液冷"], "description": "均溫板老兵轉型AI伺服器液冷散熱新勢力，3D VC、冷板與浸沒式水冷技術，切入美系CSP供應鏈", "tags": ["散熱", "液冷", "均溫板", "冷板", "AI伺服器", "浸沒式", "CSP"]}, {"code": "3653", "name": "健策", "groups": ["散熱液冷", "導線架均熱片"], "description": "散熱模組與均熱片大廠，AI伺服器與高階顯卡散熱，ILM扣件，2025全年營收年增42%創新高", "tags": ["散熱", "液冷", "均熱片", "AI伺服器", "顯卡", "ILM扣件"]}, {"code": "4542", "name": "科嶠", "groups": ["工具機"], "description": "工具機精密零組件，CNC加工相關", "tags": ["工具機", "CNC", "精密零組件"]}, {"code": "8042", "name": "金山電", "groups": ["被動元件"], "description": "鋁質電容，被動元件上游材料", "tags": ["被動元件", "電容", "鋁質電容"]}, {"code": "1595", "name": "川寶", "groups": ["PCB載板"], "description": "PCB電路板製造，AI伺服器相關板", "tags": ["PCB", "電路板", "AI伺服器"]}, {"code": "5464", "name": "霖宏", "groups": ["記憶體"], "description": "記憶體模組，DRAM相關產品", "tags": ["記憶體", "模組", "DRAM"]}, {"code": "3135", "name": "凌航", "groups": ["記憶體"], "description": "記憶體模組，DDR5受惠者", "tags": ["記憶體", "模組", "DDR5"]}, {"code": "6495", "name": "悅城", "groups": ["扇形封裝", "PCB載板"], "description": "玻璃薄化與拋光，玻璃基板核心加工廠，FOPLP關鍵製程，注意與悅城8403不同", "tags": ["扇形封裝", "玻璃基板", "薄化", "FOPLP"]}, {"code": "8227", "name": "巨有科技", "groups": ["IC半導體", "ASIC矽智財"], "description": "ASIC設計服務，IC設計，類比IC相關", "tags": ["IC設計", "ASIC", "類比IC", "半導體"]}, {"code": "6861", "name": "睿生光電", "groups": ["生技醫療", "光學鏡頭"], "description": "群創子公司，台灣首家X光平板感測器整機廠，TFT-PD全球銷量領先，跨入AI自動化X光檢測設備，產品通過FDA/CE/TFDA認證", "tags": ["生技", "醫療器材", "X光", "感測器", "AI視覺", "醫療影像", "群創"]}, {"code": "3664", "name": "安瑞-KY", "groups": ["安全監控", "網通"], "description": "通信網路設備，資安系統，安全監控相關", "tags": ["安全監控", "網通", "資安"]}, {"code": "8114", "name": "振樺電", "groups": ["工業電腦"], "description": "POS系統與零售支付設備，工業電腦應用", "tags": ["工業電腦", "POS", "零售", "支付系統"]}, {"code": "6263", "name": "普萊德", "groups": ["安全監控"], "description": "安全監控設備，影像監控解決方案", "tags": ["安全監控", "監控", "影像"]}, {"code": "8291", "name": "尚茂", "groups": ["被動元件"], "description": "被動元件，電子零組件", "tags": ["被動元件", "電子零組件"]}, {"code": "7751", "name": "竑騰", "groups": ["記憶體"], "description": "記憶體模組，DRAM相關", "tags": ["記憶體", "模組", "DRAM"]}, {"code": "5228", "name": "鈺凱", "groups": ["被動元件"], "description": "電感元件，TLVR電感，AI伺服器供電", "tags": ["被動元件", "電感", "TLVR", "AI伺服器"]}, {"code": "8444", "name": "綠河-KY", "groups": ["綠色能源"], "description": "綠能相關，再生能源", "tags": ["綠能", "再生能源", "綠色能源"]}, {"code": "8091", "name": "翔名", "groups": ["光學鏡頭"], "description": "光學鏡頭與相關光學元件", "tags": ["光學", "鏡頭", "光學元件"]}, {"code": "6924", "name": "榮惠-KY", "groups": ["生技醫療"], "description": "醫療器材相關", "tags": ["生技", "醫療器材"]}, {"code": "3663", "name": "鑫科", "groups": ["扇形封裝"], "description": "FOPLP專用特殊合金靶材，關鍵耗材供應商", "tags": ["扇形封裝", "FOPLP", "靶材", "耗材"]}, {"code": "2355", "name": "敬鵬", "groups": ["PCB載板"], "description": "高階HDI PCB製造，主攻AI伺服器與網通高階板，在泰國有大型生產基地", "tags": ["PCB", "HDI", "AI伺服器", "網通", "泰國"]}], "version": "2026-05-19-v1", "lastUpdated": "2026-05-19"};
+
+function initData() {
+  // Always compare versions: if embedded is newer, use embedded
+  const saved = localStorage.getItem('stocksData');
+  let localData = null;
+  if (saved) {
+    try { localData = JSON.parse(saved); } catch(e) {}
+  }
+  const localVer = localData?.version || '0';
+  const embedVer = EMBEDDED_DATA?.version || '1';
+  if (!localData || embedVer > localVer) {
+    // Embedded data is newer — use it and overwrite localStorage
+    stocksData = EMBEDDED_DATA;
+    saveLocal();
+  } else {
+    stocksData = localData;
+  }
+  updateStats();
+}
+
+function saveLocal() {
+  localStorage.setItem('stocksData', JSON.stringify(stocksData));
+  stocksData.lastUpdated = new Date().toLocaleDateString('zh-TW');
+}
+
+function updateStats() {
+  document.getElementById('totalCount').textContent = stocksData.stocks.length;
+  document.getElementById('dataVersion').textContent = stocksData.version || '-';
+  renderEditList();
+  renderGroupFilters();
+}
+
+// ============================================================
+// SEARCH
+// ============================================================
+let searchTimeout = null;
+
+document.getElementById('searchInput').addEventListener('input', function() {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => doSearch(this.value.trim()), 150);
+});
+
+function quickSearch(term) {
+  document.getElementById('searchInput').value = term;
+  doSearch(term);
+}
+
+function doSearch(query) {
+  if (!query) {
+    document.getElementById('resultsGrid').innerHTML = `
+      <div class="empty-state">
+        <div class="icon">📈</div>
+        <h3>輸入關鍵字開始搜尋</h3>
+        <p>支援股票代號、公司名稱、族群或主題關鍵字</p>
+      </div>`;
+    document.getElementById('resultCount').textContent = '0';
+    return;
+  }
+
+  const q = query.toLowerCase();
+  const results = stocksData.stocks.filter(s => {
+    return s.code.includes(q) ||
+      s.name.toLowerCase().includes(q) ||
+      s.groups.some(g => g.toLowerCase().includes(q)) ||
+      s.description.toLowerCase().includes(q) ||
+      s.tags.some(t => t.toLowerCase().includes(q));
+  });
+
+  // Deduplicate by code
+  const seen = new Set();
+  const unique = results.filter(s => {
+    if (seen.has(s.code + s.name)) return false;
+    seen.add(s.code + s.name);
+    return true;
+  });
+
+  document.getElementById('resultCount').textContent = unique.length;
+  renderCards(unique, q, 'resultsGrid');
+}
+
+function renderCards(stocks, highlight, containerId) {
+  const container = document.getElementById(containerId);
+  if (!stocks.length) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="icon">🔍</div>
+        <h3>找不到相關個股</h3>
+        <p>試試其他關鍵字，或使用 AI 助手查詢</p>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = stocks.map((s, i) => {
+    // 用code+name精確找到原始index，避免重複代號時算錯
+    const realIdx = stocksData.stocks.findIndex(x => x.code === s.code && x.name === s.name);
+    const highlightTag = (text) => {
+      if (!highlight) return text;
+      const re = new RegExp(`(${highlight.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi');
+      return text.replace(re, '<mark style="background:rgba(0,212,255,0.25);color:var(--accent);border-radius:2px;padding:0 2px">$1</mark>');
+    };
+
+    const tagsHtml = s.tags.slice(0, 8).map(t => {
+      const isMatch = highlight && t.toLowerCase().includes(highlight.toLowerCase());
+      return `<span class="tag ${isMatch ? 'highlight' : ''}">${t}</span>`;
+    }).join('');
+
+    const groupsHtml = s.groups.map(g =>
+      `<span class="group-tag" onclick="filterByGroup('${g}', event)">${g}</span>`
+    ).join('');
+
+    return `
+    <div class="stock-card" onclick="openModal(${realIdx})">
+      <div class="card-header">
+        <div class="stock-info">
+          <div class="stock-name">${highlightTag(s.name)}</div>
+        </div>
+        <div class="stock-code">${s.code}</div>
+      </div>
+      <div class="card-groups">${groupsHtml}</div>
+      <div class="card-desc">${highlightTag(s.description.slice(0, 80))}${s.description.length > 80 ? '...' : ''}</div>
+      <div class="card-tags">${tagsHtml}</div>
+    </div>`;
+  }).join('');
+}
+
+function filterByGroup(group, e) {
+  if (e) e.stopPropagation();
+  showTab('groups');
+  setGroupFilter(group);
+}
+
+// ============================================================
+// GROUP BROWSE
+// ============================================================
+function renderGroupFilters() {
+  const groups = [...new Set(stocksData.stocks.flatMap(s => s.groups))].sort();
+  const bar = document.getElementById('groupFilterBar');
+  bar.innerHTML = `<button class="group-filter-tag ${!activeGroupFilter ? 'active' : ''}" onclick="setGroupFilter(null)">全部</button>` +
+    groups.map(g => `<button class="group-filter-tag ${activeGroupFilter === g ? 'active' : ''}" onclick="setGroupFilter('${g}')">${g}</button>`).join('');
+}
+
+function setGroupFilter(group) {
+  activeGroupFilter = group;
+  renderGroupFilters();
+
+  const filtered = group
+    ? stocksData.stocks.filter(s => s.groups.includes(group))
+    : stocksData.stocks;
+
+  // Deduplicate
+  const seen = new Set();
+  const unique = filtered.filter(s => {
+    const key = s.code + s.name;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  renderCards(unique, '', 'groupResultsGrid');
+}
+
+// ============================================================
+// TABS
+// ============================================================
+function showTab(tab) {
+  ['search','groups','edit','audit','config'].forEach(t => {
+    const page = document.getElementById(`page-${t}`);
+    const tabEl = document.getElementById(`tab-${t}`);
+    if (page) page.style.display = t === tab ? '' : 'none';
+    if (tabEl) tabEl.classList.toggle('active', t === tab);
+  });
+  currentTab = tab;
+  if (tab === 'groups' && !activeGroupFilter) setGroupFilter(null);
+  if (tab === 'edit') renderEditList();
+  if (tab === 'audit') runAudit();
+}
+
+// ============================================================
+// AUDIT — 資料補齊工具
+// ============================================================
+
+// Reference data from original PDF
+const AUDIT_REFERENCE = {
+  '黃金避險': [
+    {code:'9955', name:'佳龍', desc:'黃金回收與貴金屬加工', tags:'黃金|避險|貴金屬回收'},
+    {code:'8440', name:'綠電', desc:'廢電子回收與貴金屬再生', tags:'黃金|避險|回收|綠電'},
+    {code:'00635U', name:'期元大S&P黃金', desc:'追蹤國際金價現貨走勢ETF', tags:'黃金|ETF|避險|金價'},
+    {code:'00708L', name:'期元大S&P黃金正2', desc:'槓桿型黃金ETF，適合短線戰爭題材', tags:'黃金|ETF|槓桿|避險'},
+    {code:'00674R', name:'期元大S&P黃金反1', desc:'避險情緒消退時放空使用的反向ETF', tags:'黃金|ETF|反向|避險'},
+    {code:'00642U', name:'期元大S&P原油', desc:'與金價通常呈正相關走勢，避險資金流向', tags:'黃金|ETF|原油|避險'},
+  ],
+  '被動元件': [
+    {code:'3357', name:'台慶科', desc:'電感元件', tags:'電感|被動元件|TLVR'},
+    {code:'3236', name:'千如', desc:'電感元件', tags:'電感|被動元件'},
+    {code:'6155', name:'鈞寶', desc:'電感元件，村田轉單受惠', tags:'電感|被動元件|TLVR|AI伺服器'},
+    {code:'2472', name:'立隆電', desc:'鋁質電容', tags:'電容|被動元件|鋁質電容'},
+    {code:'8042', name:'金山電', desc:'鋁質電容', tags:'電容|被動元件'},
+    {code:'5317', name:'凱美', desc:'MLCC電容', tags:'電容|被動元件|MLCC'},
+    {code:'5328', name:'華容', desc:'電容與電源被動元件', tags:'電容|被動元件'},
+    {code:'4760', name:'勤凱', desc:'導電銀漿/銅漿，銀價上漲最直接受惠者', tags:'被動元件|銀漿|銅漿|銀價'},
+    {code:'6175', name:'立敦', desc:'蝕刻鋁箔供應商', tags:'被動元件|鋁箔|電容材料'},
+    {code:'6432', name:'今展科', desc:'電感元件', tags:'電感|被動元件'},
+    {code:'5468', name:'鈺凱', desc:'電感元件', tags:'電感|被動元件'},
+  ],
+  '重電電網': [
+    {code:'1529', name:'樂事綠能', desc:'重電五虎之一', tags:'重電|電網|變壓器'},
+    {code:'4707', name:'玖鼎電力', desc:'智慧電表指標', tags:'重電|電網|智慧電表'},
+  ],
+  '電源供應器': [
+    {code:'3015', name:'全漢', desc:'電競、伺服器與影像傳輸電源', tags:'電源|伺服器|電競'},
+    {code:'2385', name:'群光', desc:'電競、伺服器電源', tags:'電源|伺服器|電競'},
+    {code:'3078', name:'僑威', desc:'高階電競電源', tags:'電源|電競'},
+    {code:'3296', name:'勝德', desc:'電源供應器', tags:'電源'},
+    {code:'2413', name:'環科', desc:'電源供應器', tags:'電源'},
+  ],
+  '金屬鋼鐵': [
+    {code:'8415', name:'大國鋼', desc:'全球最大工業扣件通路商，北美市佔率極高', tags:'鋼鐵|扣件|北美|關稅'},
+    {code:'2009', name:'第一銅', desc:'最純銅片加工廠，2026銅價飆漲直接受惠者', tags:'鋼鐵|銅|銅價|AI伺服器'},
+    {code:'5009', name:'榮剛', desc:'特殊鋼大廠，2026航太去中國化訂單受惠', tags:'鋼鐵|特殊鋼|航太'},
+    {code:'2006', name:'東和鋼鐵', desc:'H型鋼與鋼筋，電爐煉鋼碳足跡低', tags:'鋼鐵|電爐|碳費'},
+    {code:'2211', name:'長榮鋼', desc:'鋼構龍頭，受惠國內AI廠辦與公共工程', tags:'鋼鐵|鋼構|AI廠辦'},
+    {code:'2038', name:'海光', desc:'南部鋼筋與線材指標', tags:'鋼鐵|鋼筋'},
+    {code:'2028', name:'威致', desc:'南部鋼筋與線材指標', tags:'鋼鐵|鋼筋'},
+    {code:'2034', name:'允強', desc:'不鏽鋼管與板材龍頭', tags:'鋼鐵|不鏽鋼'},
+    {code:'2030', name:'彰源', desc:'不鏽鋼管與板材加工', tags:'鋼鐵|不鏽鋼'},
+    {code:'2014', name:'中鴻', desc:'熱軋冷軋鋼捲，受惠亞洲鋼價回升', tags:'鋼鐵|鋼捲'},
+  ],
+  '造紙碳權': [
+    {code:'1904', name:'正隆', desc:'工紙龍頭，循環經濟', tags:'造紙|碳權|工紙|循環經濟'},
+    {code:'1909', name:'榮成', desc:'中國收成股，廢紙回收再生', tags:'造紙|碳權|廢紙回收'},
+  ],
+  '食品餐飲': [
+    {code:'1215', name:'卜蜂', desc:'肉類加工與飼料', tags:'食品|肉類|飼料'},
+    {code:'1210', name:'大成', desc:'肉類加工與飼料', tags:'食品|肉類|飼料'},
+    {code:'2753', name:'八方雲集', desc:'平價餐飲龍頭，抗通膨屬性強', tags:'食品|餐飲|連鎖|平價'},
+    {code:'2729', name:'瓦城', desc:'東方菜系龍頭', tags:'食品|餐飲|連鎖'},
+    {code:'2723', name:'美食-KY', desc:'85度C，轉向美國市場擴展', tags:'食品|餐飲|85度C|美國'},
+    {code:'1231', name:'聯華食', desc:'零食與鮮食，供應超商鮮食', tags:'食品|零食|鮮食|超商'},
+    {code:'1236', name:'宏亞', desc:'餅乾與特色食品', tags:'食品|餅乾'},
+    {code:'1216', name:'統一', desc:'食品飲料龍頭', tags:'食品|飲料|統一'},
+  ],
+  '觀光旅遊': [
+    {code:'5706', name:'鳳凰', desc:'旅行社', tags:'觀光|旅遊|旅行社'},
+    {code:'2743', name:'山富', desc:'旅行社', tags:'觀光|旅遊|旅行社'},
+    {code:'2745', name:'五福', desc:'旅行社', tags:'觀光|旅遊|旅行社'},
+    {code:'2748', name:'雲品', desc:'飯店住宿', tags:'觀光|飯店'},
+    {code:'5704', name:'老爺知', desc:'飯店住宿', tags:'觀光|飯店'},
+    {code:'2722', name:'夏都', desc:'渡假村飯店', tags:'觀光|飯店|渡假'},
+    {code:'2705', name:'六福', desc:'飯店渡假村', tags:'觀光|飯店|渡假'},
+    {code:'2739', name:'寒舍', desc:'精品飯店', tags:'觀光|飯店'},
+    {code:'2719', name:'燦星旅', desc:'旅行社', tags:'觀光|旅遊|旅行社'},
+    {code:'2734', name:'易飛網', desc:'線上旅遊平台', tags:'觀光|旅遊|線上'},
+  ],
+  '工業電腦': [
+    {code:'3088', name:'艾訊', desc:'智慧工廠與自動化整合', tags:'工業電腦|智慧工廠|自動化'},
+    {code:'8234', name:'新漢', desc:'智慧工廠與自動化整合', tags:'工業電腦|智慧工廠'},
+    {code:'3022', name:'威強電', desc:'車載與AI運算模組', tags:'工業電腦|車載|AI運算'},
+    {code:'6579', name:'研揚', desc:'車載與AI運算模組', tags:'工業電腦|車載'},
+    {code:'6166', name:'凌華', desc:'車載與AI運算模組', tags:'工業電腦|車載'},
+    {code:'3416', name:'融程電', desc:'強固型平板，跨足軍工與醫療', tags:'工業電腦|軍工|醫療'},
+    {code:'6206', name:'飛捷', desc:'支付系統與零售POS', tags:'工業電腦|POS|零售'},
+  ],
+  '汽車': [
+    {code:'1522', name:'堤維西', desc:'車零件與機構件', tags:'汽車|車零件'},
+    {code:'1568', name:'倉佑', desc:'車零件', tags:'汽車|車零件'},
+    {code:'1319', name:'東陽', desc:'車零件', tags:'汽車|車零件|車燈'},
+    {code:'6605', name:'帝寶', desc:'車燈零件', tags:'汽車|車零件|車燈'},
+    {code:'2204', name:'中華', desc:'整車製造OEM', tags:'汽車|整車|OEM'},
+    {code:'2201', name:'裕隆', desc:'整車製造OEM', tags:'汽車|整車|OEM'},
+    {code:'2206', name:'三陽工業', desc:'整車製造', tags:'汽車|整車|機車'},
+    {code:'2207', name:'和泰車', desc:'整車代理', tags:'汽車|整車|代理'},
+    {code:'2497', name:'怡利電', desc:'車用電子、照明', tags:'汽車|車用電子'},
+    {code:'6279', name:'胡連', desc:'車用連接器', tags:'汽車|連接器|車用'},
+    {code:'9951', name:'皇田', desc:'車用機構件，墨西哥廠在地化', tags:'汽車|車零件|墨西哥'},
+    {code:'3717', name:'聯嘉', desc:'車用LED模組，墨西哥廠投產', tags:'汽車|車燈|LED|墨西哥'},
+  ],
+  '海運航運': [
+    {code:'2606', name:'裕民', desc:'海峽型散裝航運，BCI指數連動', tags:'海運|散裝|BCI|航運'},
+    {code:'2612', name:'中航', desc:'海峽型散裝航運', tags:'海運|散裝|航運'},
+    {code:'2605', name:'新興', desc:'海峽型散裝航運', tags:'海運|散裝|航運'},
+    {code:'2617', name:'台航', desc:'巴拿馬型散裝航運', tags:'海運|散裝|BPI|航運'},
+    {code:'2641', name:'正德', desc:'巴拿馬型散裝航運', tags:'海運|散裝|航運'},
+    {code:'5608', name:'四維航', desc:'輕便型散裝航運', tags:'海運|散裝|航運'},
+    {code:'2636', name:'台驊投控', desc:'航運代理與貨運服務', tags:'海運|貨櫃|代理'},
+    {code:'2613', name:'中櫃', desc:'貨櫃航運', tags:'海運|貨櫃|航運'},
+  ],
+  '散熱液冷': [
+    {code:'6230', name:'尼德科超眾', desc:'日系大廠背景，手機與伺服器散熱', tags:'散熱|液冷|伺服器|手機'},
+    {code:'3338', name:'泰碩', desc:'散熱模組', tags:'散熱|模組'},
+    {code:'3483', name:'力致', desc:'散熱元件', tags:'散熱'},
+    {code:'3564', name:'其陽', desc:'網通伺服器液冷開發', tags:'散熱|液冷|網通'},
+    {code:'6275', name:'元山', desc:'散熱風扇', tags:'散熱|風扇'},
+  ],
+  '低軌衛星': [
+    {code:'3062', name:'建漢', desc:'系統組裝與收發頭，鴻海集團', tags:'低軌衛星|系統整合|收發頭'},
+    {code:'2314', name:'台揚', desc:'系統組裝與衛星通訊設備', tags:'低軌衛星|系統整合|網通'},
+    {code:'2312', name:'金寶', desc:'電源供應器與組裝，承接大量星鏈訂單', tags:'低軌衛星|電源|Starlink'},
+    {code:'6282', name:'康舒', desc:'電源供應器，承接大量星鏈訂單', tags:'低軌衛星|電源|Starlink'},
+    {code:'2485', name:'兆赫', desc:'網通與衛星通訊設備', tags:'低軌衛星|網通|天線'},
+    {code:'4916', name:'事欣科', desc:'航太級機殼與結構件，波音訂單', tags:'低軌衛星|航太|機殼'},
+    {code:'3178', name:'公準', desc:'精密機構件', tags:'低軌衛星|機構件'},
+    {code:'3305', name:'昇貿', desc:'低溫焊錫膏', tags:'低軌衛星|焊錫膏'},
+    {code:'2367', name:'燿華', desc:'高階衛星板，二線供應商轉正', tags:'低軌衛星|PCB|衛星板'},
+  ],
+  '軍工無人機': [
+    {code:'6753', name:'龍德造船', desc:'造船，國防核心', tags:'軍工|造船|國防'},
+    {code:'2630', name:'亞航', desc:'航空製造', tags:'軍工|航空|航太'},
+    {code:'2644', name:'中信造船', desc:'造船', tags:'軍工|造船'},
+    {code:'2208', name:'台船', desc:'造船', tags:'軍工|造船'},
+    {code:'8222', name:'寶一', desc:'軍工零組件', tags:'軍工|精密零件'},
+    {code:'4541', name:'晟田', desc:'軍工精密材料', tags:'軍工|精密'},
+    {code:'4572', name:'駐龍', desc:'精密零組件', tags:'軍工|精密零件'},
+    {code:'8466', name:'經緯航太', desc:'定翼機無人機技術', tags:'軍工|無人機|定翼機'},
+    {code:'5371', name:'中光電', desc:'光電偵測，波音訂單', tags:'軍工|光電|波音'},
+    {code:'7363', name:'邑錡', desc:'熱顯像技術', tags:'軍工|無人機|熱顯像'},
+    {code:'5314', name:'世紀', desc:'軍用測試認可', tags:'軍工|無人機|測試'},
+    {code:'5222', name:'全訊', desc:'微波功率放大器', tags:'軍工|微波|射頻'},
+  ],
+  '機器人': [
+    {code:'2464', name:'盟立', desc:'系統整合與精密組件', tags:'機器人|系統整合|自動化'},
+    {code:'6215', name:'和椿', desc:'精密組件', tags:'機器人|精密'},
+    {code:'4562', name:'穎漢', desc:'精密傳動', tags:'機器人|精密傳動'},
+    {code:'1597', name:'直得', desc:'線性傳動', tags:'機器人|線性傳動'},
+    {code:'3379', name:'彬台', desc:'精密元件', tags:'機器人|精密'},
+  ],
+  '網通': [
+    {code:'3558', name:'神準', desc:'網通設備', tags:'網通|Wi-Fi|天線'},
+    {code:'3704', name:'合勤控', desc:'網通設備', tags:'網通|Wi-Fi'},
+    {code:'4906', name:'正文', desc:'無線通訊設備與模組OEM', tags:'網通|Wi-Fi|無線模組'},
+    {code:'2332', name:'友訊', desc:'網通設備', tags:'網通|Wi-Fi'},
+    {code:'3047', name:'訊舟', desc:'網通設備', tags:'網通'},
+    {code:'3380', name:'明泰', desc:'網通設備', tags:'網通|Wi-Fi'},
+  ],
+};
+
+let auditResults = [];
+
+function runAudit() {
+  // Get current stocks (deduplicated)
+  const seen = new Set();
+  const unique = stocksData.stocks.filter(s => {
+    const k = s.code + s.name;
+    if (seen.has(k)) return false;
+    seen.add(k); return true;
+  });
+
+  auditResults = [];
+
+  for (const [group, refStocks] of Object.entries(AUDIT_REFERENCE)) {
+    const current = unique.filter(s => s.groups.includes(group));
+    const missing = refStocks.filter(ref =>
+      !current.some(c => c.code === ref.code || c.name === ref.name)
+    );
+    auditResults.push({ group, current: current.length, missing, total: current.length + missing.length });
+  }
+
+  // Render stats
+  const totalMissing = auditResults.reduce((a,r) => a + r.missing.length, 0);
+  const groupsWithGaps = auditResults.filter(r => r.missing.length > 0).length;
+  document.getElementById('auditStats').innerHTML = `
+    <div style="background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:14px; text-align:center">
+      <div style="font-size:24px; font-weight:700; color:var(--accent); font-family:'JetBrains Mono',monospace">${unique.length}</div>
+      <div style="font-size:12px; color:var(--text3); margin-top:4px">目前個股總數</div>
+    </div>
+    <div style="background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:14px; text-align:center">
+      <div style="font-size:24px; font-weight:700; color:var(--yellow); font-family:'JetBrains Mono',monospace">${groupsWithGaps}</div>
+      <div style="font-size:12px; color:var(--text3); margin-top:4px">有缺漏的族群</div>
+    </div>
+    <div style="background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:14px; text-align:center">
+      <div style="font-size:24px; font-weight:700; color:var(--red); font-family:'JetBrains Mono',monospace">${totalMissing}</div>
+      <div style="font-size:12px; color:var(--text3); margin-top:4px">待補入個股</div>
+    </div>`;
+
+  // Render group list
+  const container = document.getElementById('auditGroupList');
+  container.innerHTML = auditResults.map((r, i) => {
+    const statusColor = r.missing.length === 0 ? 'var(--green)' : 'var(--yellow)';
+    const statusIcon = r.missing.length === 0 ? '✓' : `缺 ${r.missing.length}`;
+    return `
+    <div style="background:var(--bg2); border:1px solid ${r.missing.length > 0 ? 'rgba(255,209,102,0.3)' : 'var(--border)'}; border-radius:12px; margin-bottom:10px; overflow:hidden">
+      <div onclick="toggleAuditGroup(${i})" style="padding:14px 16px; display:flex; align-items:center; justify-content:space-between; cursor:pointer; gap:10px">
+        <div style="display:flex; align-items:center; gap:10px; flex:1 min-width:0">
+          <span style="font-size:13px; font-weight:600">${r.group}</span>
+          <span style="font-size:11px; color:var(--text3)">現有 ${r.current} 支</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px">
+          <span style="font-size:12px; padding:3px 10px; border-radius:10px; background:${r.missing.length === 0 ? 'rgba(0,229,160,0.1)' : 'rgba(255,209,102,0.1)'}; color:${statusColor}; border:1px solid ${r.missing.length === 0 ? 'rgba(0,229,160,0.3)' : 'rgba(255,209,102,0.3)'}; white-space:nowrap">${statusIcon}</span>
+          <span style="color:var(--text3); font-size:14px" id="audit-arrow-${i}">▸</span>
+        </div>
+      </div>
+      <div id="audit-detail-${i}" style="display:none; border-top:1px solid var(--border); padding:12px 16px">
+        ${r.missing.length === 0
+          ? `<div style="font-size:12px; color:var(--green); padding:8px 0">✓ 此族群資料完整，與對照表相符</div>`
+          : r.missing.map(m => `
+            <div style="display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.04)">
+              <span style="font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--accent); min-width:60px; background:rgba(0,212,255,0.08); padding:2px 6px; border-radius:4px; text-align:center">${m.code}</span>
+              <span style="font-size:13px; flex:1; font-weight:500">${m.name}</span>
+              <span style="font-size:11px; color:var(--text2); flex:2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">${m.desc}</span>
+              <button onclick="auditQuickFill('${m.code}','${m.name}','${r.group}','${m.desc}','${m.tags}')" style="background:rgba(0,229,160,0.1); border:1px solid rgba(0,229,160,0.3); color:var(--green); font-size:11px; padding:4px 12px; border-radius:6px; cursor:pointer; font-family:inherit; white-space:nowrap; transition:all 0.2s" onmouseover="this.style.background='rgba(0,229,160,0.2)'" onmouseout="this.style.background='rgba(0,229,160,0.1)'">＋ 加入</button>
+            </div>`).join('')
+        }
+        ${r.missing.length > 0 ? `<button onclick="auditAddAllInGroup(${i})" style="margin-top:10px; width:100%; padding:8px; background:rgba(0,212,255,0.08); border:1px solid rgba(0,212,255,0.2); border-radius:8px; color:var(--accent); font-size:12px; cursor:pointer; font-family:inherit">⚡ 全部加入（${r.missing.length} 支）</button>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleAuditGroup(i) {
+  const detail = document.getElementById(`audit-detail-${i}`);
+  const arrow = document.getElementById(`audit-arrow-${i}`);
+  const open = detail.style.display !== 'none';
+  detail.style.display = open ? 'none' : '';
+  arrow.textContent = open ? '▸' : '▾';
+}
+
+function auditQuickFill(code, name, group, desc, tags) {
+  document.getElementById('auditQuickAdd').style.display = '';
+  document.getElementById('aqCode').value = code;
+  document.getElementById('aqName').value = name;
+  document.getElementById('aqGroups').value = group;
+  document.getElementById('aqDesc').value = desc;
+  document.getElementById('aqTags').value = tags.replace(/\|/g, '|');
+  document.getElementById('auditQuickAdd').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function auditAddAllInGroup(i) {
+  const r = auditResults[i];
+  if (!r || !r.missing.length) return;
+  let added = 0;
+  for (const m of r.missing) {
+    const exists = stocksData.stocks.some(s => s.code === m.code);
+    if (!exists) {
+      stocksData.stocks.push({
+        code: m.code, name: m.name,
+        groups: [r.group],
+        description: m.desc,
+        tags: m.tags.split('|')
+      });
+      added++;
+    }
+  }
+  saveLocal();
+  updateStats();
+  showToast(`✓ 已加入 ${added} 支個股到「${r.group}」`);
+  runAudit();
+}
+
+function auditAddStock() {
+  document.getElementById('auditQuickAdd').style.display = '';
+  document.getElementById('aqCode').value = '';
+  document.getElementById('aqName').value = '';
+  document.getElementById('aqGroups').value = '';
+  document.getElementById('aqDesc').value = '';
+  document.getElementById('aqTags').value = '';
+  document.getElementById('aqCode').focus();
+}
+
+function auditSaveQuick() {
+  const code = document.getElementById('aqCode').value.trim();
+  const name = document.getElementById('aqName').value.trim();
+  const groups = document.getElementById('aqGroups').value.split('|').map(s=>s.trim()).filter(Boolean);
+  const desc = document.getElementById('aqDesc').value.trim();
+  const tags = document.getElementById('aqTags').value.split('|').map(s=>s.trim()).filter(Boolean);
+
+  if (!code || !name) { showToast('請填入代號與名稱', true); return; }
+
+  const existing = stocksData.stocks.findIndex(s => s.code === code);
+  if (existing >= 0) {
+    // Merge groups if already exists
+    const s = stocksData.stocks[existing];
+    const newGroups = [...new Set([...s.groups, ...groups])];
+    const newTags = [...new Set([...s.tags, ...tags])];
+    stocksData.stocks[existing] = { ...s, groups: newGroups, tags: newTags, description: desc || s.description };
+    showToast(`✓ 已更新 ${name}（合併族群）`);
+  } else {
+    stocksData.stocks.push({ code, name, groups, description: desc, tags });
+    showToast(`✓ 已新增 ${name}`);
+  }
+
+  saveLocal();
+  updateStats();
+  document.getElementById('auditQuickAdd').style.display = 'none';
+  runAudit();
+}
+
+// ============================================================
+// MODAL
+// ============================================================
+function openModal(idx) {
+  const s = stocksData.stocks[idx];
+  if (!s) return;
+  currentModalStock = { ...s, _idx: idx };
+
+  document.getElementById('modalCode').textContent = s.code;
+  document.getElementById('modalName').textContent = s.name;
+  document.getElementById('modalGroups').innerHTML = s.groups.map(g =>
+    `<span class="modal-group-tag" onclick="filterByGroup('${g}')">${g}</span>`
+  ).join('');
+  document.getElementById('modalDesc').textContent = s.description;
+  document.getElementById('modalTags').innerHTML = s.tags.map(t =>
+    `<span class="modal-tag">${t}</span>`
+  ).join('');
+
+  document.getElementById('modalOverlay').classList.add('show');
+}
+
+function closeModal(e) {
+  if (e && e.target !== e.currentTarget) return;
+  document.getElementById('modalOverlay').classList.remove('show');
+}
+
+function editFromModal() {
+  if (!currentModalStock) return;
+  closeModal();
+  openEditModal(currentModalStock._idx);
+}
+
+function aiAnalyzeStock() {
+  if (!currentModalStock) return;
+  closeModal();
+  const s = currentModalStock;
+  document.getElementById('aiInput').value = `請分析 ${s.code} ${s.name}，目前描述：「${s.description}」，目前族群：${s.groups.join('、')}，目前標籤：${s.tags.join('、')}。請建議是否有需要補充或更新的族群、標籤或描述？`;
+  toggleAIPanel(true);
+  showAIStep(1);
+}
+
+// ============================================================
+// EDIT
+// ============================================================
+function renderEditList(filter = '') {
+  const q = filter || (document.getElementById('editSearchInput')?.value || '');
+  const container = document.getElementById('editListContainer');
+  if (!container) return;
+
+  // Deduplicate for display
+  const seen = new Set();
+  const stocks = stocksData.stocks.filter(s => {
+    const key = s.code + s.name;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return !q || s.code.includes(q) || s.name.includes(q) || s.groups.join('').includes(q);
+  });
+
+  container.innerHTML = stocks.map((s) => {
+    const idx = stocksData.stocks.indexOf(s);
+    return `
+    <div style="display:flex; align-items:center; padding:12px 16px; border-bottom:1px solid rgba(255,255,255,0.04); gap:12px">
+      <span style="font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--accent); min-width:50px">${s.code}</span>
+      <span style="font-size:13px; flex:1">${s.name}</span>
+      <span style="font-size:11px; color:var(--text3); flex:2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">${s.groups.join(' · ')}</span>
+      <button class="btn btn-outline" style="padding:4px 10px; font-size:11px" onclick="openEditModal(${idx})">編輯</button>
+      <button style="background:none; border:none; color:var(--text3); cursor:pointer; font-size:14px; padding:4px 8px; transition:color 0.2s" onclick="deleteStock(${idx})" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--text3)'">✕</button>
+    </div>`;
+  }).join('');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const editSearch = document.getElementById('editSearchInput');
+  if (editSearch) {
+    editSearch.addEventListener('input', () => renderEditList(editSearch.value.trim()));
+  }
+});
+
+function openEditModal(idx) {
+  const s = stocksData.stocks[idx];
+  if (!s) return;
+  document.getElementById('editModalTitle').textContent = idx >= 0 ? `編輯：${s.name}` : '新增個股';
+  document.getElementById('editIndex').value = idx;
+  document.getElementById('editCode').value = s.code || '';
+  document.getElementById('editName').value = s.name || '';
+  document.getElementById('editGroups').value = s.groups?.join('|') || '';
+  document.getElementById('editDesc').value = s.description || '';
+  document.getElementById('editTags').value = s.tags?.join('|') || '';
+  document.getElementById('editModalOverlay').classList.add('show');
+}
+
+function openAddModal() {
+  document.getElementById('editModalTitle').textContent = '新增個股';
+  document.getElementById('editIndex').value = '-1';
+  document.getElementById('editCode').value = '';
+  document.getElementById('editName').value = '';
+  document.getElementById('editGroups').value = '';
+  document.getElementById('editDesc').value = '';
+  document.getElementById('editTags').value = '';
+  document.getElementById('editModalOverlay').classList.add('show');
+}
+
+function closeEditModal(e) {
+  if (e && e.target !== e.currentTarget) return;
+  document.getElementById('editModalOverlay').classList.remove('show');
+}
+
+function saveStockEdit() {
+  const idx = parseInt(document.getElementById('editIndex').value);
+  const code = document.getElementById('editCode').value.trim();
+  const name = document.getElementById('editName').value.trim();
+  const groups = document.getElementById('editGroups').value.split('|').map(s => s.trim()).filter(Boolean);
+  const description = document.getElementById('editDesc').value.trim();
+  const tags = document.getElementById('editTags').value.split('|').map(s => s.trim()).filter(Boolean);
+
+  if (!code || !name) { showToast('請填入代號與名稱', true); return; }
+
+  const stock = { code, name, groups, description, tags };
+
+  if (idx === -1) {
+    stocksData.stocks.push(stock);
+    showToast(`✓ 已新增 ${name}`);
+  } else {
+    stocksData.stocks[idx] = stock;
+    showToast(`✓ 已更新 ${name}`);
+  }
+
+  saveLocal();
+  updateStats();
+  closeEditModal();
+  renderEditList();
+}
+
+function deleteStock(idx) {
+  const s = stocksData.stocks[idx];
+  if (!confirm(`確定刪除 ${s.code} ${s.name}？`)) return;
+  stocksData.stocks.splice(idx, 1);
+  saveLocal();
+  updateStats();
+  renderEditList();
+  showToast(`已刪除 ${s.name}`);
+}
+
+function exportData() {
+  const blob = new Blob([JSON.stringify(stocksData, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `stocks_data_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  showToast('✓ 已匯出 JSON 檔案');
+}
+
+function importData(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (!data.stocks) throw new Error('格式錯誤');
+      stocksData = data;
+      saveLocal();
+      updateStats();
+      showToast(`✓ 已匯入 ${data.stocks.length} 筆資料`);
+    } catch(err) {
+      showToast('匯入失敗：JSON 格式錯誤', true);
+    }
+  };
+  reader.readAsText(file);
+}
+
+// ============================================================
+// AI PANEL
+// ============================================================
+// ============================================================
+// AI PANEL — 複製模式（方案 A）
+// ============================================================
+function toggleAIPanel(forceOpen) {
+  const panel = document.getElementById('aiPanel');
+  if (forceOpen) panel.classList.add('open');
+  else panel.classList.toggle('open');
+}
+
+function showAIStep(step) {
+  [1,2,3].forEach(n => {
+    document.getElementById(`ai-step-${n}`).style.display = n === step ? '' : 'none';
+    const tab = document.getElementById(`step-tab-${n}`);
+    if (n === step) {
+      tab.style.background = 'rgba(0,212,255,0.12)';
+      tab.style.color = 'var(--accent)';
+      tab.style.fontWeight = '600';
+    } else {
+      tab.style.background = 'transparent';
+      tab.style.color = 'var(--text3)';
+      tab.style.fontWeight = '400';
+    }
+  });
+  // scroll to top
+  document.getElementById('aiPanelBody').scrollTop = 0;
+}
+
+function prepareAIPrompt() {
+  const input = document.getElementById('aiInput').value.trim();
+  if (!input) { showToast('請先貼入新聞或消息內容', true); return; }
+
+  // Build compact stock context
+  const stockContext = stocksData.stocks
+    .map(s => `${s.code} ${s.name} [${s.groups.join('|')}]`)
+    .join('\n');
+
+  const prompt = `你是台灣股票市場族群分析助手。以下是我的個股資料庫：
+
+${stockContext}
+
+---
+【新聞/消息】
+${input}
+
+---
+請分析上面的新聞，找出資料庫中哪些個股需要更新，並嚴格按照以下格式回覆：
+
+分析摘要：（一句話說明這則新聞的主要影響）
+
+建議更新清單：
+- [代號] [名稱]：新增族群XXX 或 新增標籤XXX 或 更新描述為XXX - 原因說明
+
+（只列出確實需要更新的個股，不需要更新的不要列出）`;
+
+  document.getElementById('aiPromptPreview').value = prompt;
+  showAIStep(2);
+}
+
+function copyPrompt() {
+  const text = document.getElementById('aiPromptPreview').value;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copyBtn');
+    btn.textContent = '✓ 已複製！';
+    btn.style.background = 'rgba(0,229,160,0.2)';
+    btn.style.borderColor = 'var(--green)';
+    btn.style.color = 'var(--green)';
+    setTimeout(() => {
+      btn.textContent = '📋 複製提問';
+      btn.style.background = '';
+      btn.style.borderColor = '';
+      btn.style.color = '';
+    }, 2500);
+    showToast('✓ 提問已複製，請貼到 Claude.ai');
+  }).catch(() => {
+    // fallback
+    const ta = document.getElementById('aiPromptPreview');
+    ta.select();
+    document.execCommand('copy');
+    showToast('✓ 已複製（舊版方式）');
+  });
+}
+
+function parseAIReply() {
+  const reply = document.getElementById('aiReplyInput').value.trim();
+  if (!reply) { showToast('請先貼入 Claude 的回覆', true); return; }
+
+  const container = document.getElementById('parsedSuggestions');
+  const lines = reply.split('\n');
+  let html = '';
+  let foundSuggestions = false;
+
+  // Parse summary
+  const summaryLine = lines.find(l => l.includes('分析摘要'));
+  if (summaryLine) {
+    const summary = summaryLine.replace(/.*分析摘要[：:]\s*/, '').trim() || lines[lines.indexOf(summaryLine)+1]?.trim();
+    if (summary) {
+      html += `<div class="ai-msg assistant" style="margin-bottom:12px">
+        <strong style="color:var(--accent)">📊 分析摘要</strong><br>${summary}
+      </div>`;
+    }
+  }
+
+  // Parse suggestions — flexible patterns
+  // Matches: - [2002] [中鋼]：... or - 2002 中鋼：... or **2002 中鋼**：...
+  const patterns = [
+    /^[-•]\s*\[?(\d{4,5})\]?\s*\[?([^\]：:]+)\]?\s*[：:]\s*(.+)/,
+    /^\*{0,2}(\d{4,5})\s+([^*：:（(]+)\*{0,2}\s*[：:（(]\s*(.+)/,
+  ];
+
+  for (const line of lines) {
+    let matched = false;
+    for (const pat of patterns) {
+      const m = line.match(pat);
+      if (m) {
+        foundSuggestions = true;
+        const code = m[1].trim();
+        const name = m[2].trim();
+        const action = m[3].replace(/\*+/g, '').trim();
+        const safeAction = action.replace(/'/g, "\\'").replace(/`/g, "'");
+        html += `
+          <div class="suggestion-item">
+            <span class="suggestion-code">${code}</span>
+            <div class="suggestion-content">
+              <div class="suggestion-name">${name}</div>
+              <div class="suggestion-reason">${action}</div>
+            </div>
+            <button class="suggestion-apply" onclick="applyAISuggestion('${code}','${name.replace(/'/g,"\\'")}','${safeAction}')">套用</button>
+          </div>`;
+        matched = true;
+        break;
+      }
+    }
+  }
+
+  if (!foundSuggestions) {
+    html += `<div class="ai-msg system">
+      ⚠ 沒有解析到建議清單格式。<br><br>
+      可能原因：Claude 的回覆格式不符合預期。<br>
+      你可以直接閱讀上方回覆，手動點「✏️ 資料管理」編輯個股。
+    </div>`;
+  } else {
+    html = `<div style="font-size:12px; color:var(--text3); margin-bottom:10px">解析到 ${(html.match(/suggestion-item/g)||[]).length} 筆建議，點「套用」開啟編輯視窗：</div>` + html;
+  }
+
+  container.innerHTML = html;
+  showToast(`✓ 解析完成`);
+}
+
+function applyAISuggestion(code, name, action) {
+  const idx = stocksData.stocks.findIndex(s => s.code === code);
+  if (idx === -1) {
+    showToast(`找不到 ${code}，將開啟新增視窗`, true);
+    toggleAIPanel();
+    openAddModal();
+    document.getElementById('editCode').value = code;
+    document.getElementById('editName').value = name;
+    return;
+  }
+  toggleAIPanel();
+  openEditModal(idx);
+  showToast(`✓ 已開啟 ${name} 編輯視窗，請確認並儲存`);
+}
+
+function resetAIPanel() {
+  document.getElementById('aiInput').value = '';
+  document.getElementById('aiReplyInput') && (document.getElementById('aiReplyInput').value = '');
+  document.getElementById('parsedSuggestions') && (document.getElementById('parsedSuggestions').innerHTML = '');
+  showAIStep(1);
+}
+
+function clearAIChat() { resetAIPanel(); }
+
+function scrollAIToBottom() {
+  const body = document.getElementById('aiPanelBody');
+  if (body) setTimeout(() => body.scrollTop = body.scrollHeight, 100);
+}
+
+// ============================================================
+// GOOGLE SHEETS
+// ============================================================
+function saveSheetsConfig() {
+  const id = document.getElementById('sheetsId').value.trim();
+  const key = document.getElementById('apiKey').value.trim();
+  localStorage.setItem('sheetsId', id);
+  localStorage.setItem('apiKey', key);
+  showToast('✓ 設定已儲存');
+}
+
+async function testSheetsConnection() {
+  const id = document.getElementById('sheetsId').value.trim();
+  const key = document.getElementById('apiKey').value.trim();
+  if (!id || !key) { showToast('請先填入 Sheets ID 和 API Key', true); return; }
+
+  try {
+    setSyncStatus('syncing', '連接中...');
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${id}/values/A1:A1?key=${key}`;
+    const r = await fetch(url);
+    if (r.ok) {
+      setSyncStatus('online', '連接成功');
+      showToast('✓ Google Sheets 連接成功！');
+    } else {
+      throw new Error(`HTTP ${r.status}`);
+    }
+  } catch(err) {
+    setSyncStatus('offline', '連接失敗');
+    showToast(`連接失敗：${err.message}`, true);
+  }
+}
+
+async function syncFromSheets() {
+  const id = localStorage.getItem('sheetsId') || document.getElementById('sheetsId').value.trim();
+  const key = localStorage.getItem('apiKey') || document.getElementById('apiKey').value.trim();
+  if (!id || !key) { showToast('請先完成 Google Sheets 設定', true); showTab('config'); return; }
+
+  try {
+    setSyncStatus('syncing', '同步中...');
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${id}/values/A2:E1000?key=${key}`;
+    const r = await fetch(url);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const data = await r.json();
+    const rows = data.values || [];
+
+    const stocks = rows
+      .filter(row => row[0] && row[1])
+      .map(row => ({
+        code: (row[0] || '').trim(),
+        name: (row[1] || '').trim(),
+        groups: (row[2] || '').split('|').map(s => s.trim()).filter(Boolean),
+        description: (row[3] || '').trim(),
+        tags: (row[4] || '').split('|').map(s => s.trim()).filter(Boolean)
+      }));
+
+    if (!stocks.length) throw new Error('Sheets 中沒有資料（請確認格式）');
+
+    stocksData.stocks = stocks;
+    stocksData.lastUpdated = new Date().toLocaleDateString('zh-TW');
+    saveLocal();
+    updateStats();
+    setSyncStatus('online', `同步完成 ${stocks.length} 筆`);
+    showToast(`✓ 已從 Sheets 同步 ${stocks.length} 筆資料`);
+  } catch(err) {
+    setSyncStatus('offline', '同步失敗');
+    showToast(`同步失敗：${err.message}`, true);
+  }
+}
+
+function setSyncStatus(state, text) {
+  const dot = document.getElementById('syncDot');
+  const textEl = document.getElementById('syncText');
+  dot.className = 'sync-dot' + (state === 'offline' ? ' offline' : state === 'syncing' ? ' syncing' : '');
+  textEl.textContent = text;
+}
+
+// ============================================================
+// TOAST
+// ============================================================
+function showToast(msg, isError = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (isError ? ' error' : '');
+  setTimeout(() => t.className = 'toast', 3000);
+}
+
+// ============================================================
+// INIT
+// ============================================================
+window.addEventListener('DOMContentLoaded', () => {
+  initData();
+
+  // Restore config
+  const savedId = localStorage.getItem('sheetsId');
+  const savedKey = localStorage.getItem('apiKey');
+  if (savedId) document.getElementById('sheetsId').value = savedId;
+  if (savedKey) document.getElementById('apiKey').value = savedKey;
+  if (savedId && savedKey) setSyncStatus('online', 'Sheets 已設定');
+});
+</script>
+</body>
+</html>
